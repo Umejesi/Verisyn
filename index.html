@@ -263,6 +263,27 @@
   body.badge-mode .verdict-desc{display:none;}
   body.badge-mode a.badge-link{display:block;font-size:10px;color:var(--ink-faint);margin-top:6px;text-decoration:none;}
 
+  .account-chip{font-size:12.5px;color:var(--ink-soft);background:var(--surface);border:1px solid var(--line);
+    padding:6px 11px;border-radius:20px;}
+
+  .auth-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;
+    align-items:center;justify-content:center;}
+  .auth-overlay.show{display:flex;}
+  .auth-modal{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px;
+    width:300px;max-width:90vw;}
+  .auth-head{display:flex;justify-content:space-between;align-items:center;font-size:16px;font-weight:700;
+    margin-bottom:14px;}
+  .auth-close{cursor:pointer;color:var(--ink-faint);font-size:20px;line-height:1;}
+  .auth-close:hover{color:var(--ink);}
+  .auth-modal input{width:100%;padding:11px 12px;border-radius:8px;border:1px solid var(--line);
+    background:var(--surface-2);color:var(--ink);font-size:13.5px;font-family:'Inter',sans-serif;margin-bottom:8px;}
+  .auth-modal button{width:100%;background:var(--blue);color:#fff;border:none;border-radius:8px;padding:11px;
+    font-weight:600;font-size:14px;cursor:pointer;margin-top:4px;}
+  .auth-status{font-size:12.5px;margin-top:10px;min-height:16px;color:var(--danger);}
+  .auth-status.ok{color:var(--safe);}
+  .auth-switch{font-size:12.5px;color:var(--ink-soft);margin-top:14px;text-align:center;}
+  .auth-switch a{color:var(--blue);font-weight:600;text-decoration:none;margin-left:4px;}
+
   .pro-badge-nav{display:inline-flex;align-items:center;background:var(--blue-soft);color:var(--blue);
     font-size:12px;font-weight:700;padding:5px 10px;border-radius:20px;}
 
@@ -302,12 +323,32 @@
     <div class="logo"><div class="logo-mark"></div>Verisyn</div>
     <div class="head-right">
       <span class="pro-badge-nav" id="proBadgeNav" style="display:none;">⭐ PRO</span>
+      <span class="account-chip" id="accountChip" style="display:none;"></span>
+      <a class="nav-link" id="loginNavBtn" href="#">Log in</a>
       <a class="nav-link" href="#pricing">Pricing</a>
       <button class="theme-toggle" id="themeToggle" title="Toggle theme">☀️</button>
       <a class="nav-cta" href="#pricing">Upgrade to Pro</a>
     </div>
   </div>
 </header>
+
+<div class="auth-overlay" id="authOverlay">
+  <div class="auth-modal">
+    <div class="auth-head">
+      <span id="authTitle">Log in</span>
+      <span class="auth-close" id="authClose">×</span>
+    </div>
+    <input type="email" id="authEmail" placeholder="you@email.com">
+    <input type="password" id="authPassword" placeholder="Password (min 6 characters)">
+    <button id="authSubmit">Log in</button>
+    <div class="auth-status" id="authStatus"></div>
+    <div class="auth-switch">
+      <span id="authSwitchText">Don't have an account?</span>
+      <a href="#" id="authSwitchLink">Sign up</a>
+    </div>
+  </div>
+</div>
+
 
 <div class="container hero">
   <div class="eyebrow">Contract Risk Scanner</div>
@@ -443,8 +484,7 @@
       </ul>
 
       <div class="checkout-box">
-        <input type="email" id="checkoutEmail" placeholder="you@email.com">
-        <button class="plan-btn" id="paystackBtn" style="margin-top:8px;">Subscribe with Paystack — ₦15,000/mo</button>
+        <button class="plan-btn" id="paystackBtn">Subscribe with Paystack — ₦15,000/mo</button>
         <div class="checkout-status" id="checkoutStatus"></div>
       </div>
 
@@ -488,44 +528,120 @@ const PAYSTACK_AMOUNT_KOBO = 1500000;
 const PAYSTACK_CURRENCY = 'NGN';
 
 let scansUsed = 0;
-const FREE_LIMIT = 5;
+const FREE_LIMIT = 5; // kept as a display fallback only; real enforcement happens server-side now
 let lastReport = null;
 let recentScans = [];
 let selectedChain = '1';
 let scanMode = 'token';
 let watchlist = [];
 let isPro = false;
-let proCode = null;
+let isLoggedIn = false;
+let userEmail = null;
+let currentTier = 'guest'; // 'guest' | 'registered' | 'pro' — set from server responses
+let remainingScans = null;
+let guestId = null;
 
-function loadProState(){
+function getGuestId(){
   try{
-    isPro = localStorage.getItem('verisyn_is_pro') === '1';
-    proCode = localStorage.getItem('verisyn_pro_code') || null;
-  }catch(e){ isPro = false; }
+    let id = localStorage.getItem('verisyn_guest_id');
+    if(!id){ id = crypto.randomUUID(); localStorage.setItem('verisyn_guest_id', id); }
+    return id;
+  }catch(e){
+    if(!guestId) guestId = 'temp-' + Math.random().toString(36).slice(2);
+    return guestId;
+  }
 }
-function setProState(active, code){
-  isPro = active;
-  proCode = code || null;
+
+async function refreshAuthState(){
   try{
-    if(active){ localStorage.setItem('verisyn_is_pro','1'); localStorage.setItem('verisyn_pro_code', code||''); }
-    else { localStorage.removeItem('verisyn_is_pro'); localStorage.removeItem('verisyn_pro_code'); }
-  }catch(e){}
+    const res = await fetch('/api/auth');
+    const data = await res.json();
+    isLoggedIn = !!data.loggedIn;
+    userEmail = data.email || null;
+    isPro = !!data.isPro;
+    currentTier = isPro ? 'pro' : (isLoggedIn ? 'registered' : 'guest');
+  }catch(e){
+    isLoggedIn = false; userEmail = null; isPro = false; currentTier = 'guest';
+  }
   reflectProUI();
 }
+
 function reflectProUI(){
   document.body.classList.toggle('is-pro', isPro);
-  const badge = document.getElementById('proBadgeNav');
-  if(badge) badge.style.display = isPro ? 'inline-flex' : 'none';
+  document.getElementById('proBadgeNav').style.display = isPro ? 'inline-flex' : 'none';
+
+  const chip = document.getElementById('accountChip');
+  const loginBtn = document.getElementById('loginNavBtn');
+  if(isLoggedIn){
+    chip.textContent = userEmail;
+    chip.style.display = 'inline-flex';
+    loginBtn.textContent = 'Log out';
+  } else {
+    chip.style.display = 'none';
+    loginBtn.textContent = 'Log in';
+  }
   updateQuota();
 }
+
 // Centralized gate: call before running a Pro-only action.
-// Returns true if allowed to proceed; otherwise shows an upsell and returns false.
 function requirePro(featureLabel){
   if(isPro) return true;
-  showError(`${featureLabel} is a Pro feature. Redeem a Pro code or upgrade below to unlock it.`);
+  const msg = isLoggedIn
+    ? `${featureLabel} is a Pro feature. Redeem a Pro code or upgrade below to unlock it.`
+    : `${featureLabel} is a Pro feature. Log in and upgrade to unlock it.`;
+  showError(msg);
   document.getElementById('pricing').scrollIntoView({behavior:'smooth'});
   return false;
 }
+
+// --- auth modal ---
+let authMode = 'login';
+function openAuthModal(mode){
+  authMode = mode || 'login';
+  document.getElementById('authOverlay').classList.add('show');
+  document.getElementById('authTitle').textContent = authMode === 'login' ? 'Log in' : 'Create account';
+  document.getElementById('authSubmit').textContent = authMode === 'login' ? 'Log in' : 'Sign up';
+  document.getElementById('authSwitchText').textContent = authMode === 'login' ? "Don't have an account?" : 'Already have an account?';
+  document.getElementById('authSwitchLink').textContent = authMode === 'login' ? 'Sign up' : 'Log in';
+  document.getElementById('authStatus').textContent = '';
+  document.getElementById('authStatus').className = 'auth-status';
+}
+function closeAuthModal(){ document.getElementById('authOverlay').classList.remove('show'); }
+
+document.getElementById('authClose').addEventListener('click', closeAuthModal);
+document.getElementById('authOverlay').addEventListener('click', (e)=>{ if(e.target.id==='authOverlay') closeAuthModal(); });
+document.getElementById('authSwitchLink').addEventListener('click', (e)=>{ e.preventDefault(); openAuthModal(authMode==='login' ? 'signup' : 'login'); });
+
+document.getElementById('loginNavBtn').addEventListener('click', async (e)=>{
+  e.preventDefault();
+  if(isLoggedIn){
+    await fetch('/api/auth', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({action:'logout'})});
+    await refreshAuthState();
+  } else {
+    openAuthModal('login');
+  }
+});
+
+document.getElementById('authSubmit').addEventListener('click', async ()=>{
+  const email = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value;
+  const status = document.getElementById('authStatus');
+  status.textContent = 'Working...'; status.className = 'auth-status';
+  try{
+    const res = await fetch('/api/auth', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({action: authMode, email, password})
+    });
+    const data = await res.json();
+    if(!res.ok){ status.textContent = data.error || 'Something went wrong.'; status.className = 'auth-status'; return; }
+    status.textContent = authMode==='login' ? 'Logged in!' : 'Account created!';
+    status.className = 'auth-status ok';
+    await refreshAuthState();
+    setTimeout(closeAuthModal, 700);
+  }catch(e){
+    status.textContent = 'Network error — try again.'; status.className = 'auth-status';
+  }
+});
 
 function buildShareUrl(address, chain){
   const url = new URL(location.href);
@@ -718,13 +834,14 @@ document.getElementById('waitlistSubmit').addEventListener('click', ()=>{
 });
 
 document.getElementById('paystackBtn').addEventListener('click', ()=>{
-  const email = document.getElementById('checkoutEmail').value.trim();
   const status = document.getElementById('checkoutStatus');
-  if(!email.includes('@')){
-    status.textContent = 'Enter a valid email first.';
+  if(!isLoggedIn){
+    status.textContent = 'Log in or create a free account first — Pro attaches to your account so it works on any device.';
     status.className = 'checkout-status err show';
+    openAuthModal('login');
     return;
   }
+  const email = userEmail;
   if(!window.PaystackPop || PAYSTACK_PUBLIC_KEY.includes('replace_with')){
     status.textContent = 'Checkout is not fully configured yet — use "Not ready — notify me later" below for now.';
     status.className = 'checkout-status err show';
@@ -770,7 +887,7 @@ async function pollForProCode(reference, status, attempt){
       });
       const redeemData = await redeemRes.json();
       if(redeemData.valid){
-        setProState(true, data.code);
+        await refreshAuthState();
         status.innerHTML = `✓ Pro unlocked! Your backup code (save this): <b>${data.code}</b>`;
         status.className = 'checkout-status ok show';
       } else {
@@ -784,6 +901,12 @@ async function pollForProCode(reference, status, attempt){
 }
 
 document.getElementById('redeemBtn').addEventListener('click', async ()=>{
+  if(!isLoggedIn){
+    document.getElementById('redeemStatus').textContent = 'Log in or create a free account first, then redeem your code.';
+    document.getElementById('redeemStatus').className = 'redeem-status err show';
+    openAuthModal('login');
+    return;
+  }
   const codeInput = document.getElementById('redeemCode');
   const code = codeInput.value.trim();
   const status = document.getElementById('redeemStatus');
@@ -799,7 +922,7 @@ document.getElementById('redeemBtn').addEventListener('click', async ()=>{
     });
     const data = await res.json();
     if(data.valid){
-      setProState(true, code);
+      await refreshAuthState();
       status.textContent = '✓ Pro unlocked! Unlimited scans, wallet analysis, watchlists, and exports are now active.';
       status.className = 'redeem-status ok show';
     } else {
@@ -813,14 +936,13 @@ document.getElementById('redeemBtn').addEventListener('click', async ()=>{
 });
 
 function updateQuota(){
-  if(isPro){
-    document.getElementById('quotaText').textContent = '⭐ Pro — unlimited scans';
+  const el = document.getElementById('quotaText');
+  if(isPro){ el.textContent = '⭐ Pro — unlimited scans'; return; }
+  if(isLoggedIn){
+    el.textContent = remainingScans === null ? '5 scans/day (registered)' : `${remainingScans} scan${remainingScans===1?'':'s'} left today`;
     return;
   }
-  const left = Math.max(0, FREE_LIMIT - scansUsed);
-  document.getElementById('quotaText').textContent = left > 0
-    ? `${left} free scan${left===1?'':'s'} left today`
-    : `Free scans used up for today`;
+  el.textContent = remainingScans === null ? '3 scans/day (guest — log in for 5/day)' : `${remainingScans} guest scan${remainingScans===1?'':'s'} left today — log in for more`;
 }
 updateQuota();
 
@@ -843,61 +965,56 @@ async function runScan(){
     showError("That doesn't look like a valid address (should start with 0x, 42 characters).");
     return;
   }
-  if(!isPro && scansUsed >= FREE_LIMIT){
-    showError("You've used today's free scans. Upgrade to Pro below for unlimited scanning.");
-    document.getElementById('pricing').scrollIntoView({behavior:'smooth'});
-    return;
-  }
   if(scanMode === 'wallet' && !requirePro('Wallet analysis')) return;
 
   document.getElementById('results').classList.remove('show');
+  setLoading(true, scanMode === 'wallet' ? 'checking wallet reputation...' : 'pulling on-chain security data...');
 
-  if(scanMode === 'wallet'){
-    setLoading(true, 'checking wallet reputation...');
-    try{
-      const wsec = await fetchWalletSecurity(chain, address);
-      const analysis = computeWalletRisk(wsec);
+  try{
+    const scanRes = await fetch('/api/scan', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ address, chain, mode: scanMode, guestId: getGuestId() })
+    });
+    const payload = await scanRes.json();
+
+    if(!scanRes.ok){
+      if(scanRes.status === 429){
+        showError(payload.error);
+        document.getElementById('pricing').scrollIntoView({behavior:'smooth'});
+      } else if(scanRes.status === 403){
+        requirePro('Wallet analysis');
+      } else {
+        showError(payload.error || 'Scan failed. The address may be too new or unsupported.');
+      }
+      return;
+    }
+
+    currentTier = payload.tier;
+    remainingScans = payload.remaining;
+    isPro = payload.tier === 'pro';
+    updateQuota();
+
+    let analysis;
+    if(scanMode === 'wallet'){
+      analysis = computeWalletRisk(payload.security);
       setLoading(true, 'writing plain-english verdict...');
       const verdict = await getAiVerdict(analysis, address, chain, 'wallet');
       renderResults(analysis, null, verdict, address, chain, {}, true);
-      scansUsed++;
-      updateQuota();
       addRecent(address.slice(0,6), address, chain);
-    }catch(err){
-      console.error(err);
-      showError('Could not complete the wallet check. Try a different address.');
-    }finally{
-      setLoading(false);
+    } else {
+      analysis = computeRisk(payload.security, payload.market);
+      setLoading(true, 'writing plain-english verdict...');
+      const verdict = await getAiVerdict(analysis, address, chain, 'token');
+      renderResults(analysis, payload.market, verdict, address, chain, payload.security, false);
+      addRecent(payload.security.token_symbol || address.slice(0,6), address, chain);
     }
-    return;
-  }
-
-  setLoading(true, 'pulling on-chain security data...');
-  try{
-    const security = await fetchSecurity(chain, address);
-    setLoading(true, 'checking market & liquidity...');
-    const market = await fetchMarket(address);
-    const analysis = computeRisk(security, market);
-    setLoading(true, 'writing plain-english verdict...');
-    const verdict = await getAiVerdict(analysis, address, chain, 'token');
-    renderResults(analysis, market, verdict, address, chain, security, false);
-    scansUsed++;
-    updateQuota();
-    addRecent(security.token_symbol || address.slice(0,6), address, chain);
   }catch(err){
     console.error(err);
-    showError('Could not complete the scan. The contract may be too new, unindexed, or unsupported. Try a different address.');
+    showError('Could not complete the scan. Try again shortly.');
   }finally{
     setLoading(false);
   }
-}
-
-async function fetchWalletSecurity(chainId, address){
-  const res = await fetch(`https://api.gopluslabs.io/api/v1/address_security/${address}?chain_id=${chainId}`);
-  if(!res.ok) throw new Error('address security api failed');
-  const data = await res.json();
-  if(!data.result) throw new Error('no wallet data');
-  return data.result;
 }
 
 function computeWalletRisk(w){
@@ -956,22 +1073,6 @@ function addRecent(symbol, address, chain){
       runScan();
     });
   });
-}
-
-async function fetchSecurity(chainId, address){
-  const res = await fetch(`https://api.gopluslabs.io/api/v1/token_security/${chainId}?contract_addresses=${address}`);
-  if(!res.ok) throw new Error('security api failed');
-  const data = await res.json();
-  const key = Object.keys(data.result || {})[0];
-  if(!key) throw new Error('no security data');
-  return data.result[key];
-}
-async function fetchMarket(address){
-  const res = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${address}`);
-  if(!res.ok) return null;
-  const data = await res.json();
-  if(!data.pairs || data.pairs.length===0) return null;
-  return data.pairs.sort((a,b)=>(b.liquidity?.usd||0)-(a.liquidity?.usd||0))[0];
 }
 
 function computeRisk(s, market){
@@ -1169,8 +1270,7 @@ document.getElementById('embedBtn').addEventListener('click', ()=>{
 
 // --- init: handle shared links + badge mode + trending ---
 (function init(){
-  loadProState();
-  reflectProUI();
+  refreshAuthState();
 
   const params = new URLSearchParams(location.search);
   const sharedAddress = params.get('a');
