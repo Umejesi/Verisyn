@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Verisyn — Scan before you ape</title>
+<meta name="description" content="Free AI-powered token safety scanner. Check honeypot risk, tax, mint risk, liquidity lock, and holder concentration in seconds. No wallet connection required.">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="Verisyn — Scan any token before you ape in">
+<meta property="og:description" content="Free AI-powered token safety scanner. Honeypot check, tax, mint risk, liquidity lock, holder concentration — explained in plain English. No wallet connection needed.">
+<meta property="og:image" content="/og-image.png">
+<meta property="og:url" content="https://verisyn-five.vercel.app">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Verisyn — Scan any token before you ape in">
+<meta name="twitter:description" content="Free AI-powered token safety scanner. No wallet connection needed.">
+<meta name="twitter:image" content="/og-image.png">
+
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%232451FF'/%3E%3Crect x='22' y='47' width='56' height='6' rx='3' fill='white'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root[data-theme="dark"]{
+    --canvas:#0B0E13;
+    --surface:#12161D;
+    --surface-2:#181D26;
+    --ink:#EDEFF2;
+    --ink-soft:#9BA3AE;
+    --ink-faint:#5E6670;
+    --line:#232933;
+    --blue:#4C7CFF;
+    --blue-soft:#182238;
+    --safe:#22C57D;
+    --safe-soft:#10241C;
+    --warn:#F0B429;
+    --warn-soft:#2A2213;
+    --danger:#F4555C;
+    --danger-soft:#2B171B;
+  }
+  :root[data-theme="light"]{
+    --canvas:#F5F6F8;
+    --surface:#FFFFFF;
+    --surface-2:#F5F6F8;
+    --ink:#14171C;
+    --ink-soft:#5B6472;
+    --ink-faint:#9AA2AC;
+    --line:#E4E7EC;
+    --blue:#2451FF;
+    --blue-soft:#EEF1FF;
+    --safe:#0EA968;
+    --safe-soft:#E7F8F0;
+    --warn:#B77A05;
+    --warn-soft:#FDF3DC;
+    --danger:#D6363C;
+    --danger-soft:#FCEAEA;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;background:var(--canvas);color:var(--ink);font-family:'Inter',sans-serif;transition:background 0.2s ease,color 0.2s ease;}
+  h1,h2,h3,.mono{font-family:'Space Grotesk',sans-serif;}
+  .data{font-family:'IBM Plex Mono',monospace;}
+  a{color:inherit;}
+  .container{max-width:760px;margin:0 auto;padding:0 20px;}
+
+  header{border-bottom:1px solid var(--line);background:var(--surface);}
+  .headbar{display:flex;align-items:center;justify-content:space-between;padding:14px 0;}
+  .logo{display:flex;align-items:center;gap:9px;font-weight:700;font-size:18px;}
+  .logo-mark{width:22px;height:22px;border-radius:6px;background:var(--blue);position:relative;flex-shrink:0;}
+  .logo-mark::after{content:'';position:absolute;left:4px;right:4px;height:2px;background:#fff;top:50%;
+    transform:translateY(-50%);border-radius:2px;box-shadow:0 -6px 0 rgba(255,255,255,0.45), 0 6px 0 rgba(255,255,255,0.45);}
+  .head-right{display:flex;align-items:center;gap:14px;}
+  .nav-link{font-size:13.5px;color:var(--ink-soft);text-decoration:none;}
+  .nav-cta{font-size:13.5px;font-weight:600;background:var(--ink);color:var(--canvas);padding:9px 16px;border-radius:7px;
+    text-decoration:none;border:none;cursor:pointer;}
+  .theme-toggle{background:var(--surface-2);border:1px solid var(--line);border-radius:7px;width:34px;height:34px;
+    cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;color:var(--ink-soft);}
+
+  .hero{padding:44px 0 4px;}
+  .eyebrow{font-size:12.5px;font-weight:600;color:var(--blue);letter-spacing:0.4px;text-transform:uppercase;margin-bottom:10px;}
+  h1{font-size:32px;line-height:1.15;margin:0 0 10px;letter-spacing:-0.5px;}
+  .sub{color:var(--ink-soft);font-size:15px;line-height:1.5;margin:0 0 18px;max-width:520px;}
+
+  .badges{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:22px;}
+  .badge{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-soft);background:var(--surface);
+    border:1px solid var(--line);padding:6px 11px;border-radius:20px;}
+  .badge b{color:var(--safe);font-weight:700;}
+  .badge.highlight{border-color:var(--blue);color:var(--blue);}
+  .badge.highlight b{color:var(--blue);}
+
+  .scan-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;position:relative;overflow:hidden;}
+  .chain-row{display:flex;gap:7px;margin-bottom:10px;flex-wrap:wrap;}
+  .chain-chip{display:flex;align-items:center;gap:6px;background:var(--surface-2);border:1.5px solid var(--line);
+    border-radius:8px;padding:8px 12px;font-size:13px;font-weight:600;cursor:pointer;color:var(--ink-soft);}
+  .chain-chip .dot{width:8px;height:8px;border-radius:50%;}
+  .chain-chip[data-active="true"]{border-color:var(--blue);color:var(--ink);background:var(--blue-soft);}
+
+  .scan-row{display:flex;gap:8px;flex-wrap:wrap;}
+  input[type=text]{background:var(--surface-2);border:1px solid var(--line);color:var(--ink);
+    border-radius:8px;padding:12px 13px;font-size:14px;font-family:'IBM Plex Mono',monospace;flex:1 1 220px;min-width:0;}
+  input:focus{outline:none;border-color:var(--blue);}
+  button.scan-btn{background:var(--blue);color:#fff;border:none;border-radius:8px;padding:12px 22px;
+    font-weight:600;font-size:14px;cursor:pointer;flex:0 0 auto;font-family:'Inter',sans-serif;}
+  button.scan-btn:hover{filter:brightness(1.1);}
+  button.scan-btn:disabled{background:var(--ink-faint);cursor:not-allowed;}
+
+  .recent-row{display:flex;align-items:center;gap:6px;margin-top:12px;flex-wrap:wrap;font-size:12px;color:var(--ink-faint);}
+  .recent-chip{background:var(--surface-2);border:1px solid var(--line);color:var(--ink-soft);font-size:12px;
+    padding:5px 11px;border-radius:20px;cursor:pointer;font-family:'IBM Plex Mono',monospace;}
+  .recent-chip:hover{border-color:var(--blue);color:var(--blue);}
+
+  .examples{margin-top:10px;font-size:12.5px;color:var(--ink-faint);}
+  .chip{background:var(--surface-2);border:1px solid var(--line);color:var(--ink-soft);font-size:12px;
+    padding:5px 11px;border-radius:20px;margin:6px 6px 0 0;cursor:pointer;font-family:'IBM Plex Mono',monospace;}
+  .chip:hover{border-color:var(--blue);color:var(--blue);}
+
+  .scanline{position:absolute;left:0;right:0;height:3px;top:0;
+    background:linear-gradient(90deg, transparent, var(--blue), transparent);
+    box-shadow:0 0 18px 4px rgba(76,124,255,0.35);opacity:0;pointer-events:none;}
+  .scanline.active{animation:sweep 1.4s linear infinite;opacity:1;}
+  @keyframes sweep{from{top:0;}to{top:100%;}}
+
+  .loading-text{display:none;align-items:center;gap:8px;color:var(--ink-soft);font-size:13px;margin-top:12px;font-family:'IBM Plex Mono',monospace;}
+  .loading-text.show{display:flex;}
+  .spin{width:13px;height:13px;border:2px solid var(--line);border-top-color:var(--blue);border-radius:50%;animation:spin 0.7s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  .error-box{display:none;background:var(--danger-soft);border:1px solid var(--danger);color:var(--danger);
+    border-radius:9px;padding:13px 15px;font-size:13.5px;margin-top:14px;}
+  .error-box.show{display:block;}
+
+  #results{display:none;margin-top:18px;}
+  #results.show{display:block;animation:fadein 0.4s ease;}
+  @keyframes fadein{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+
+  /* verdict banner */
+  .verdict-banner{border-radius:14px;padding:20px 22px;margin-bottom:14px;border:1.5px solid;}
+  .verdict-banner.safe{background:var(--safe-soft);border-color:var(--safe);}
+  .verdict-banner.warn{background:var(--warn-soft);border-color:var(--warn);}
+  .verdict-banner.bad{background:var(--danger-soft);border-color:var(--danger);}
+  .verdict-headline{display:flex;align-items:center;gap:8px;font-size:18px;font-weight:700;margin-bottom:6px;font-family:'Space Grotesk',sans-serif;}
+  .verdict-oneliner{font-size:14px;line-height:1.5;color:var(--ink);}
+
+  .verdict-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:14px;}
+  .verdict-top{display:flex;align-items:center;gap:18px;margin-bottom:14px;}
+  .gauge-wrap{position:relative;width:88px;height:88px;flex-shrink:0;}
+  .gauge-wrap svg{transform:rotate(-90deg);}
+  .gauge-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+  .gauge-score{font-size:22px;font-weight:700;font-family:'Space Grotesk',sans-serif;line-height:1;}
+  .gauge-max{font-size:9px;color:var(--ink-faint);}
+  .tier-tag{display:inline-block;font-size:11.5px;font-weight:700;padding:3px 10px;border-radius:20px;
+    text-transform:uppercase;letter-spacing:0.4px;margin-bottom:5px;}
+  .verdict-desc{color:var(--ink-soft);font-size:14px;line-height:1.55;}
+  .confidence-line{font-size:12px;color:var(--ink-faint);margin-top:8px;}
+
+  .share-row{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;}
+  .share-btn{background:var(--surface-2);border:1px solid var(--line);border-radius:7px;padding:8px 13px;
+    font-size:12.5px;font-weight:600;color:var(--ink-soft);cursor:pointer;}
+  .share-btn:hover{border-color:var(--blue);color:var(--blue);}
+
+  .section-label{font-size:12px;font-weight:700;color:var(--ink-faint);text-transform:uppercase;
+    letter-spacing:1px;margin:0 0 10px 2px;}
+
+  .risk-cards{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;}
+  .risk-card{background:var(--surface);border:1px solid var(--line);border-left:3px solid; border-radius:10px;
+    padding:12px 14px;display:flex;gap:11px;align-items:flex-start;}
+  .risk-card.ok{border-left-color:var(--safe);}
+  .risk-card.warn{border-left-color:var(--warn);}
+  .risk-card.bad{border-left-color:var(--danger);}
+  .risk-icon{width:24px;height:24px;border-radius:7px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;}
+  .risk-card.ok .risk-icon{background:var(--safe-soft);color:var(--safe);}
+  .risk-card.warn .risk-icon{background:var(--warn-soft);color:var(--warn);}
+  .risk-card.bad .risk-icon{background:var(--danger-soft);color:var(--danger);}
+  .risk-title{font-size:13.5px;font-weight:700;margin-bottom:2px;}
+  .risk-desc{font-size:13px;color:var(--ink-soft);line-height:1.4;}
+  .risk-sev{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;margin-left:auto;padding:2px 8px;border-radius:20px;flex-shrink:0;}
+  .risk-card.ok .risk-sev{background:var(--safe-soft);color:var(--safe);}
+  .risk-card.warn .risk-sev{background:var(--warn-soft);color:var(--warn);}
+  .risk-card.bad .risk-sev{background:var(--danger-soft);color:var(--danger);}
+
+  .lock-overlay{background:var(--surface);border:1px dashed var(--line);border-radius:12px;padding:16px 18px;
+    display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap;}
+  .lock-overlay .lock-copy{font-size:13px;color:var(--ink-soft);}
+  .lock-overlay .lock-copy b{color:var(--ink);}
+  .lock-cta{background:var(--blue);color:#fff;border:none;border-radius:7px;padding:8px 15px;font-size:12.5px;
+    font-weight:600;cursor:pointer;white-space:nowrap;}
+
+  .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .stat{background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:13px 15px;}
+  .stat-label{font-size:11px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:0.5px;}
+  .stat-value{font-size:16px;font-weight:700;margin-top:4px;font-family:'Space Grotesk',sans-serif;}
+
+  .meta-row{display:flex;justify-content:space-between;align-items:center;margin-top:14px;font-size:11.5px;color:var(--ink-faint);}
+
+  .pricing{padding:60px 0 30px;}
+  .pricing-head{text-align:center;margin-bottom:28px;}
+  .pricing-head h2{font-size:24px;margin:0 0 8px;}
+  .pricing-head p{color:var(--ink-soft);font-size:14px;margin:0;}
+  .plans{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .plan{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:24px;}
+  .plan.pro{border:2px solid var(--blue);position:relative;}
+  .plan-tag{position:absolute;top:-11px;left:20px;background:var(--blue);color:#fff;font-size:11px;font-weight:700;
+    padding:3px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:0.4px;}
+  .plan-name{font-size:13px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;}
+  .plan-price{font-size:28px;font-weight:700;font-family:'Space Grotesk',sans-serif;margin-bottom:2px;}
+  .plan-price span{font-size:13px;color:var(--ink-faint);font-weight:500;font-family:'Inter',sans-serif;}
+  .plan-feats{list-style:none;padding:0;margin:16px 0 20px;font-size:13.5px;color:var(--ink-soft);}
+  .plan-feats li{display:flex;gap:8px;padding:6px 0;}
+  .plan-feats li::before{content:'✓';color:var(--safe);font-weight:700;}
+  .plan-btn{width:100%;padding:11px;border-radius:8px;font-weight:600;font-size:14px;border:1px solid var(--line);
+    background:var(--surface-2);color:var(--ink-soft);cursor:pointer;}
+  .plan.pro .plan-btn{background:var(--blue);color:#fff;border:none;}
+
+  .waitlist{display:none;margin-top:14px;gap:8px;}
+  .waitlist.show{display:flex;}
+  .waitlist input{flex:1;padding:11px 12px;border-radius:8px;border:1px solid var(--line);font-size:13.5px;
+    font-family:'Inter',sans-serif;background:var(--surface-2);color:var(--ink);}
+  .waitlist button{background:var(--ink);color:var(--canvas);border:none;border-radius:8px;padding:11px 16px;font-weight:600;font-size:13.5px;cursor:pointer;}
+  .waitlist-success{display:none;color:var(--safe);font-size:13px;font-weight:600;margin-top:12px;}
+  .waitlist-success.show{display:block;}
+
+  .mode-row{display:flex;gap:8px;margin-bottom:12px;}
+  .mode-btn{flex:1;background:var(--surface-2);border:1.5px solid var(--line);color:var(--ink-soft);
+    border-radius:8px;padding:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;}
+  .mode-btn[data-active="true"]{border-color:var(--blue);color:var(--ink);background:var(--blue-soft);}
+
+  .watchlist-row{display:flex;align-items:center;gap:6px;margin-top:12px;flex-wrap:wrap;font-size:12px;color:var(--ink-faint);}
+  .watch-chip{display:flex;align-items:center;gap:5px;background:var(--surface-2);border:1px solid var(--line);
+    color:var(--ink-soft);font-size:12px;padding:5px 6px 5px 11px;border-radius:20px;font-family:'IBM Plex Mono',monospace;}
+  .watch-chip span.go{cursor:pointer;}
+  .watch-chip span.go:hover{color:var(--blue);}
+  .watch-chip .rm{cursor:pointer;color:var(--ink-faint);padding:2px 5px;border-radius:50%;}
+  .watch-chip .rm:hover{color:var(--danger);background:var(--danger-soft);}
+
+  .trending-wrap{margin-top:16px;}
+  .trending-label{font-size:12px;font-weight:700;color:var(--ink-faint);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+  .trending-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;}
+  .trend-chip{flex:0 0 auto;display:flex;align-items:center;gap:7px;background:var(--surface);border:1px solid var(--line);
+    border-radius:10px;padding:8px 12px;cursor:pointer;font-size:12.5px;color:var(--ink-soft);white-space:nowrap;}
+  .trend-chip:hover{border-color:var(--blue);color:var(--ink);}
+  .trend-chip .tdot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+  .trend-chip img{width:16px;height:16px;border-radius:50%;flex-shrink:0;}
+
+  .shared-banner{margin-top:16px;background:var(--blue-soft);border:1px solid var(--blue);color:var(--blue);
+    border-radius:10px;padding:11px 14px;font-size:13px;}
+
+  .embed-box{display:none;margin-top:10px;background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:10px 12px;}
+  .embed-box.show{display:block;}
+  .embed-box textarea{width:100%;background:transparent;color:var(--ink-soft);border:none;font-family:'IBM Plex Mono',monospace;
+    font-size:11.5px;resize:none;height:44px;outline:none;}
+
+  body.badge-mode header, body.badge-mode .hero, body.badge-mode .scan-card,
+  body.badge-mode .trending-wrap, body.badge-mode .shared-banner,
+  body.badge-mode .risk-cards, body.badge-mode .lock-overlay, body.badge-mode .stat-grid,
+  body.badge-mode .section-label, body.badge-mode .pricing, body.badge-mode footer,
+  body.badge-mode .share-row, body.badge-mode .meta-row, body.badge-mode .confidence-line{ display:none !important; }
+  body.badge-mode{background:transparent;}
+  body.badge-mode .container{padding:0;max-width:none;}
+  body.badge-mode .verdict-card{margin:0;padding:12px 14px;border-radius:10px;}
+  body.badge-mode .verdict-top{margin-bottom:0;gap:12px;}
+  body.badge-mode .gauge-wrap{width:52px;height:52px;}
+  body.badge-mode .gauge-score{font-size:16px;}
+  body.badge-mode .verdict-desc{display:none;}
+  body.badge-mode a.badge-link{display:block;font-size:10px;color:var(--ink-faint);margin-top:6px;text-decoration:none;}
+
+  .pro-badge-nav{display:inline-flex;align-items:center;background:var(--blue-soft);color:var(--blue);
+    font-size:12px;font-weight:700;padding:5px 10px;border-radius:20px;}
+
+  .redeem-box{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:16px 0 4px;}
+  .redeem-label{font-size:12px;color:var(--ink-soft);margin-bottom:8px;font-weight:600;}
+  .redeem-row{display:flex;gap:6px;}
+  .redeem-row input{flex:1;padding:9px 11px;border-radius:7px;border:1px solid var(--line);
+    background:var(--surface);color:var(--ink);font-size:13px;font-family:'IBM Plex Mono',monospace;}
+  .redeem-row button{background:var(--ink);color:var(--canvas);border:none;border-radius:7px;padding:9px 14px;
+    font-weight:600;font-size:13px;cursor:pointer;}
+  .redeem-status{display:none;font-size:12px;margin-top:8px;line-height:1.4;}
+  .redeem-status.show{display:block;}
+  .redeem-status.ok{color:var(--safe);}
+  .redeem-status.err{color:var(--danger);}
+  .redeem-divider{text-align:center;color:var(--ink-faint);font-size:11.5px;margin:12px 0;text-transform:uppercase;letter-spacing:1px;}
+
+  body.is-pro .lock-overlay{display:none !important;}
+
+  footer{text-align:center;color:var(--ink-faint);font-size:12px;padding:36px 0 60px;line-height:1.7;}
+
+  @media (max-width:520px){ .plans{grid-template-columns:1fr;} h1{font-size:26px;} }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container headbar">
+    <div class="logo"><div class="logo-mark"></div>Verisyn</div>
+    <div class="head-right">
+      <span class="pro-badge-nav" id="proBadgeNav" style="display:none;">⭐ PRO</span>
+      <a class="nav-link" href="#pricing">Pricing</a>
+      <button class="theme-toggle" id="themeToggle" title="Toggle theme">☀️</button>
+      <a class="nav-cta" href="#pricing">Upgrade to Pro</a>
+    </div>
+  </div>
+</header>
+
+<div class="container hero">
+  <div class="eyebrow">Contract Risk Scanner</div>
+  <h1>Scan any token before you ape in.</h1>
+  <p class="sub">Paste a contract address. Verisyn checks it against live on-chain security data and liquidity, then explains what it found in plain English.</p>
+  <div class="badges">
+    <div class="badge highlight">✓ <b>No wallet connection required</b></div>
+    <div class="badge">✓ Live GoPlus Security</div>
+    <div class="badge">✓ Live DexScreener data</div>
+    <div class="badge">✓ AI explained</div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="scan-card">
+    <div class="scanline" id="scanline"></div>
+    <div class="mode-row">
+      <button class="mode-btn" id="modeTokenBtn" data-active="true">🪙 Token</button>
+      <button class="mode-btn" id="modeWalletBtn">👛 Wallet</button>
+    </div>
+    <div class="chain-row" id="chainRow">
+      <div class="chain-chip" data-chain="1" data-active="true"><span class="dot" style="background:#627EEA"></span>ETH</div>
+      <div class="chain-chip" data-chain="56"><span class="dot" style="background:#F0B90B"></span>BSC</div>
+      <div class="chain-chip" data-chain="8453"><span class="dot" style="background:#0052FF"></span>Base</div>
+      <div class="chain-chip" data-chain="42161"><span class="dot" style="background:#28A0F0"></span>Arbitrum</div>
+    </div>
+    <div class="scan-row">
+      <input type="text" id="address" placeholder="0x... contract address">
+      <button class="scan-btn" id="scanBtn">Scan</button>
+    </div>
+    <div class="examples" id="examplesRow">
+      Try: <span class="chip" data-addr="0x6982508145454ce325ddbe47a25d4ec3d2311933" data-chain="1">PEPE · ETH</span>
+      <span class="chip" data-addr="0x912CE59144191C1204E64559FE8253a0e49E6548" data-chain="42161">ARB · Arbitrum</span>
+      <span class="chip" data-addr="0x10f6f2b97f3ab29583d9d38babf2994df7220c21" data-chain="56">TEDDY · BSC (known soft-rug)</span>
+    </div>
+    <div class="watchlist-row" id="watchlistRow" style="display:none;">
+      <span>⭐ Watchlist:</span>
+    </div>
+    <div class="recent-row" id="recentRow" style="display:none;">
+      <span>Recent:</span>
+    </div>
+    <div class="loading-text" id="loadingText"><div class="spin"></div><span id="loadingLabel">pulling on-chain data...</span></div>
+    <div class="error-box" id="errorBox"></div>
+    <div class="meta-row">
+      <span id="quotaText">5 free scans left today</span>
+      <a class="nav-link" href="#pricing" style="color:var(--blue);font-weight:600;">Unlock unlimited →</a>
+    </div>
+  </div>
+
+  <div class="trending-wrap" id="trendingWrap" style="display:none;">
+    <div class="trending-label">🔥 Trending on DEXs right now</div>
+    <div class="trending-row" id="trendingRow"></div>
+  </div>
+
+  <div class="shared-banner" id="sharedBanner" style="display:none;">
+    📎 You're viewing a shared scan — anyone with this link sees this same live report.
+  </div>
+
+  <div id="results">
+    <div class="verdict-banner" id="verdictBanner">
+      <div class="verdict-headline" id="verdictHeadline">—</div>
+      <div class="verdict-oneliner" id="verdictOneliner">—</div>
+    </div>
+
+    <div class="verdict-card">
+      <div class="verdict-top">
+        <div class="gauge-wrap">
+          <svg width="88" height="88">
+            <circle cx="44" cy="44" r="38" fill="none" stroke-width="8" style="stroke:var(--line)"/>
+            <circle id="gaugeArc" cx="44" cy="44" r="38" fill="none" stroke-width="8" stroke-linecap="round"
+              stroke-dasharray="238.8" stroke-dashoffset="238.8" style="transition:stroke-dashoffset 1s ease, stroke 0.3s ease;"/>
+          </svg>
+          <div class="gauge-center"><div class="gauge-score" id="gaugeScore">--</div><div class="gauge-max">/100</div></div>
+        </div>
+        <div>
+          <div class="tier-tag" id="tierTag">—</div>
+          <div class="verdict-desc" id="verdictDesc">Run a scan to see the verdict.</div>
+          <div class="confidence-line" id="confidenceLine"></div>
+        </div>
+      </div>
+      <div class="share-row">
+        <button class="share-btn" id="copyBtn">📋 Copy summary</button>
+        <button class="share-btn" id="shareTwBtn">📤 Share analysis</button>
+        <button class="share-btn" id="embedBtn">🔗 Get embed badge</button>
+        <button class="share-btn" id="watchBtn">⭐ Save to watchlist</button>
+        <button class="share-btn" id="exportBtn">📄 Export report</button>
+      </div>
+      <div class="embed-box" id="embedBox"><textarea id="embedCode" readonly></textarea></div>
+      <a class="badge-link" href="#" target="_blank" id="badgeLink" style="display:none;">Verified by Verisyn →</a>
+    </div>
+
+    <div class="section-label">Risk breakdown</div>
+    <div class="risk-cards" id="riskCards"></div>
+    <div id="lockOverlay" class="lock-overlay" style="display:none;">
+      <div class="lock-copy"><b id="lockCount"></b> Pro unlocks full detail on every check + real-time alerts.</div>
+      <button class="lock-cta" onclick="document.getElementById('pricing').scrollIntoView({behavior:'smooth'})">Unlock</button>
+    </div>
+
+    <div class="section-label market-only">Market snapshot</div>
+    <div class="stat-grid market-only" id="statGrid"></div>
+    <div class="meta-row"><span id="scanTime"></span><span id="dataSource">Data: GoPlus + DexScreener</span></div>
+  </div>
+</div>
+
+<div class="container pricing" id="pricing">
+  <div class="pricing-head">
+    <h2>Simple pricing</h2>
+    <p>Free to try. Upgrade when you're scanning more than a few tokens a day.</p>
+  </div>
+  <div class="plans">
+    <div class="plan">
+      <div class="plan-name">Free</div>
+      <div class="plan-price">$0</div>
+      <ul class="plan-feats">
+        <li>5 scans per day</li>
+        <li>Basic risk score</li>
+        <li>Basic report</li>
+        <li>1 saved watchlist item</li>
+      </ul>
+      <button class="plan-btn" disabled>Current plan</button>
+    </div>
+    <div class="plan pro">
+      <div class="plan-tag">Available now</div>
+      <div class="plan-name">Pro</div>
+      <div class="plan-price">$12<span>/mo</span></div>
+      <ul class="plan-feats">
+        <li>Unlimited scans</li>
+        <li>AI explanations</li>
+        <li>Wallet analysis</li>
+        <li>New token alerts (coming soon)</li>
+        <li>Unlimited watchlists</li>
+        <li>Export reports</li>
+      </ul>
+
+      <div class="redeem-box">
+        <div class="redeem-label">Already have a Pro code?</div>
+        <div class="redeem-row">
+          <input type="text" id="redeemCode" placeholder="Enter code">
+          <button id="redeemBtn">Redeem</button>
+        </div>
+        <div class="redeem-status" id="redeemStatus"></div>
+      </div>
+
+      <div class="redeem-divider">or</div>
+
+      <button class="plan-btn" id="proBtn">Get notified when checkout opens</button>
+      <div class="waitlist" id="waitlistForm">
+        <input type="email" id="waitlistEmail" placeholder="you@email.com">
+        <button id="waitlistSubmit">Join</button>
+      </div>
+      <div class="waitlist-success" id="waitlistSuccess">You're on the list — we'll email you when checkout goes live.</div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Data from GoPlus Security &amp; DexScreener. AI summary is a starting point, not financial advice.<br>
+  Verisyn is in beta — always verify independently before trading.
+</footer>
+
+<script>
+const CHAIN_NAMES = {1:'Ethereum',56:'BSC',8453:'Base',42161:'Arbitrum'};
+const DEXSCREENER_CHAIN_MAP = {ethereum:'1', bsc:'56', base:'8453', arbitrum:'42161'};
+let scansUsed = 0;
+const FREE_LIMIT = 5;
+let lastReport = null;
+let recentScans = [];
+let selectedChain = '1';
+let scanMode = 'token';
+let watchlist = [];
+let isPro = false;
+let proCode = null;
+
+function loadProState(){
+  try{
+    isPro = localStorage.getItem('verisyn_is_pro') === '1';
+    proCode = localStorage.getItem('verisyn_pro_code') || null;
+  }catch(e){ isPro = false; }
+}
+function setProState(active, code){
+  isPro = active;
+  proCode = code || null;
+  try{
+    if(active){ localStorage.setItem('verisyn_is_pro','1'); localStorage.setItem('verisyn_pro_code', code||''); }
+    else { localStorage.removeItem('verisyn_is_pro'); localStorage.removeItem('verisyn_pro_code'); }
+  }catch(e){}
+  reflectProUI();
+}
+function reflectProUI(){
+  document.body.classList.toggle('is-pro', isPro);
+  const badge = document.getElementById('proBadgeNav');
+  if(badge) badge.style.display = isPro ? 'inline-flex' : 'none';
+  updateQuota();
+}
+// Centralized gate: call before running a Pro-only action.
+// Returns true if allowed to proceed; otherwise shows an upsell and returns false.
+function requirePro(featureLabel){
+  if(isPro) return true;
+  showError(`${featureLabel} is a Pro feature. Redeem a Pro code or upgrade below to unlock it.`);
+  document.getElementById('pricing').scrollIntoView({behavior:'smooth'});
+  return false;
+}
+
+function buildShareUrl(address, chain){
+  const url = new URL(location.href);
+  url.search = '';
+  url.searchParams.set('a', address);
+  url.searchParams.set('c', chain);
+  return url.toString();
+}
+function buildBadgeUrl(address, chain){
+  const url = new URL(location.href);
+  url.search = '';
+  url.searchParams.set('a', address);
+  url.searchParams.set('c', chain);
+  url.searchParams.set('badge', '1');
+  return url.toString();
+}
+
+async function loadTrending(){
+  try{
+    const res = await fetch('https://api.dexscreener.com/token-boosts/latest/v1');
+    if(!res.ok) return;
+    const data = await res.json();
+    const list = (Array.isArray(data) ? data : []).filter(t => DEXSCREENER_CHAIN_MAP[t.chainId]).slice(0, 8);
+    if(list.length === 0) return;
+    const row = document.getElementById('trendingRow');
+    row.innerHTML = '';
+    const dotColors = {'1':'#627EEA','56':'#F0B90B','8453':'#0052FF','42161':'#28A0F0'};
+    list.forEach(t=>{
+      const chain = DEXSCREENER_CHAIN_MAP[t.chainId];
+      const chip = document.createElement('div');
+      chip.className = 'trend-chip';
+      const short = t.tokenAddress.slice(0,6) + '…' + t.tokenAddress.slice(-4);
+      chip.innerHTML = `<span class="tdot" style="background:${dotColors[chain]}"></span>${t.icon ? `<img src="${t.icon}" onerror="this.remove()">` : ''}<span>${short} · ${CHAIN_NAMES[chain]}</span>`;
+      chip.addEventListener('click', ()=>{
+        document.getElementById('address').value = t.tokenAddress;
+        selectedChain = chain;
+        document.querySelectorAll('.chain-chip').forEach(c=>c.toggleAttribute('data-active', c.dataset.chain===selectedChain));
+        runScan();
+      });
+      row.appendChild(chip);
+    });
+    document.getElementById('trendingWrap').style.display = 'block';
+  }catch(e){ /* trending is a bonus, fail silently */ }
+}
+
+// theme toggle
+const html = document.documentElement;
+document.getElementById('themeToggle').addEventListener('click', ()=>{
+  const cur = html.getAttribute('data-theme');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  html.setAttribute('data-theme', next);
+  document.getElementById('themeToggle').textContent = next === 'dark' ? '☀️' : '🌙';
+});
+
+// chain chips
+document.querySelectorAll('.chain-chip').forEach(chip=>{
+  chip.addEventListener('click', ()=>{
+    document.querySelectorAll('.chain-chip').forEach(c=>c.removeAttribute('data-active'));
+    chip.setAttribute('data-active','true');
+    selectedChain = chip.dataset.chain;
+  });
+});
+
+document.querySelectorAll('.chip').forEach(el=>{
+  el.addEventListener('click', ()=>{
+    document.getElementById('address').value = el.dataset.addr;
+    selectedChain = el.dataset.chain;
+    document.querySelectorAll('.chain-chip').forEach(c=>{
+      c.toggleAttribute('data-active', c.dataset.chain === selectedChain);
+    });
+    runScan();
+  });
+});
+
+document.getElementById('scanBtn').addEventListener('click', runScan);
+document.getElementById('address').addEventListener('keydown', e=>{ if(e.key==='Enter') runScan(); });
+
+// --- mode toggle: token vs wallet ---
+document.getElementById('modeTokenBtn').addEventListener('click', ()=> setMode('token'));
+document.getElementById('modeWalletBtn').addEventListener('click', ()=>{
+  if(!requirePro('Wallet analysis')) return;
+  setMode('wallet');
+});
+function setMode(mode){
+  scanMode = mode;
+  document.getElementById('modeTokenBtn').toggleAttribute('data-active', mode==='token');
+  document.getElementById('modeWalletBtn').toggleAttribute('data-active', mode==='wallet');
+  document.getElementById('address').placeholder = mode==='token' ? '0x... contract address' : '0x... wallet address';
+  document.getElementById('examplesRow').style.display = mode==='token' ? '' : 'none';
+  document.getElementById('results').classList.remove('show');
+}
+
+// --- watchlist: stored in localStorage when available, falls back to session-only ---
+function storageAvailable(){
+  try{ const k='__t'; localStorage.setItem(k,'1'); localStorage.removeItem(k); return true; }catch(e){ return false; }
+}
+const HAS_STORAGE = storageAvailable();
+function loadWatchlist(){
+  if(!HAS_STORAGE) return [];
+  try{ return JSON.parse(localStorage.getItem('verisyn_watchlist') || '[]'); }catch(e){ return []; }
+}
+function saveWatchlist(){
+  if(!HAS_STORAGE) return;
+  try{ localStorage.setItem('verisyn_watchlist', JSON.stringify(watchlist)); }catch(e){}
+}
+function renderWatchlist(){
+  const row = document.getElementById('watchlistRow');
+  if(watchlist.length === 0){ row.style.display = 'none'; return; }
+  row.style.display = 'flex';
+  row.innerHTML = '<span>⭐ Watchlist:</span>' + watchlist.map((w,i)=>
+    `<span class="watch-chip"><span class="go" data-i="${i}">${w.label}</span><span class="rm" data-i="${i}">×</span></span>`
+  ).join('');
+  row.querySelectorAll('.go').forEach(el=> el.addEventListener('click', ()=>{
+    const w = watchlist[parseInt(el.dataset.i)];
+    document.getElementById('address').value = w.address;
+    selectedChain = w.chain;
+    setMode(w.mode);
+    document.querySelectorAll('.chain-chip').forEach(c=>c.toggleAttribute('data-active', c.dataset.chain===selectedChain));
+    runScan();
+  }));
+  row.querySelectorAll('.rm').forEach(el=> el.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    watchlist.splice(parseInt(el.dataset.i), 1);
+    saveWatchlist();
+    renderWatchlist();
+  }));
+}
+watchlist = loadWatchlist();
+renderWatchlist();
+
+document.getElementById('watchBtn').addEventListener('click', ()=>{
+  if(!lastReport) return;
+  const {address, chain, isWallet} = lastReport;
+  if(watchlist.some(w=>w.address===address && w.mode===(isWallet?'wallet':'token'))) return;
+  if(!isPro && watchlist.length >= 1){
+    showError('Free plan allows 1 saved watchlist item. Upgrade to Pro for unlimited watchlists.');
+    document.getElementById('pricing').scrollIntoView({behavior:'smooth'});
+    return;
+  }
+  const label = `${address.slice(0,6)}…${address.slice(-4)}`;
+  watchlist.unshift({label, address, chain, mode: isWallet?'wallet':'token'});
+  watchlist = isPro ? watchlist.slice(0, 50) : watchlist.slice(0, 1);
+  saveWatchlist();
+  renderWatchlist();
+  const btn = document.getElementById('watchBtn');
+  const orig = btn.textContent; btn.textContent = '✓ Saved';
+  setTimeout(()=>btn.textContent=orig, 1500);
+});
+
+document.getElementById('exportBtn').addEventListener('click', ()=>{
+  if(!lastReport) return;
+  if(!requirePro('Export report')) return;
+  const {analysis, address, chain, verdict, isWallet} = lastReport;
+  const lines = [];
+  lines.push(`VERISYN ${isWallet ? 'WALLET' : 'TOKEN'} SAFETY REPORT`);
+  lines.push('='.repeat(40));
+  lines.push(`Address: ${address}`);
+  lines.push(`Chain: ${CHAIN_NAMES[chain]}`);
+  lines.push(`Generated: ${new Date().toLocaleString()}`);
+  lines.push('');
+  lines.push(`VERDICT: ${analysis.emoji} ${analysis.tier} (${analysis.score}/100)`);
+  lines.push(verdict);
+  lines.push('');
+  lines.push('RISK BREAKDOWN:');
+  analysis.flags.forEach(f=>{
+    const tag = f.level==='ok' ? '[CLEAR]' : f.level==='warn' ? '[MEDIUM]' : '[HIGH]';
+    lines.push(`${tag} ${f.title} — ${f.desc}`);
+  });
+  lines.push('');
+  lines.push('Data: GoPlus Security + DexScreener. Not financial advice.');
+  lines.push('Generated by Verisyn — verisyn-five.vercel.app');
+
+  const blob = new Blob([lines.join('\\n')], {type:'text/plain'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `verisyn-report-${address.slice(0,8)}.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById('proBtn').addEventListener('click', ()=>{
+  document.getElementById('waitlistForm').classList.add('show');
+});
+document.getElementById('waitlistSubmit').addEventListener('click', ()=>{
+  const email = document.getElementById('waitlistEmail').value.trim();
+  if(!email.includes('@')) return;
+  document.getElementById('waitlistForm').classList.remove('show');
+  document.getElementById('waitlistSuccess').classList.add('show');
+});
+
+document.getElementById('redeemBtn').addEventListener('click', async ()=>{
+  const codeInput = document.getElementById('redeemCode');
+  const code = codeInput.value.trim();
+  const status = document.getElementById('redeemStatus');
+  if(!code){ status.textContent = 'Enter a code first.'; status.className='redeem-status err show'; return; }
+
+  status.textContent = 'Checking...';
+  status.className = 'redeem-status show';
+  try{
+    const res = await fetch('/api/redeem', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({code})
+    });
+    const data = await res.json();
+    if(data.valid){
+      setProState(true, code);
+      status.textContent = '✓ Pro unlocked! Unlimited scans, wallet analysis, watchlists, and exports are now active.';
+      status.className = 'redeem-status ok show';
+    } else {
+      status.textContent = data.reason || 'Invalid or already-used code.';
+      status.className = 'redeem-status err show';
+    }
+  }catch(e){
+    status.textContent = 'Could not verify code right now — try again shortly.';
+    status.className = 'redeem-status err show';
+  }
+});
+
+function updateQuota(){
+  if(isPro){
+    document.getElementById('quotaText').textContent = '⭐ Pro — unlimited scans';
+    return;
+  }
+  const left = Math.max(0, FREE_LIMIT - scansUsed);
+  document.getElementById('quotaText').textContent = left > 0
+    ? `${left} free scan${left===1?'':'s'} left today`
+    : `Free scans used up for today`;
+}
+updateQuota();
+
+function showError(msg){ const b=document.getElementById('errorBox'); b.textContent=msg; b.classList.add('show'); }
+function clearError(){ document.getElementById('errorBox').classList.remove('show'); }
+function setLoading(on, label){
+  document.getElementById('scanline').classList.toggle('active', on);
+  const lt = document.getElementById('loadingText');
+  if(label) document.getElementById('loadingLabel').textContent = label;
+  lt.classList.toggle('show', on);
+  document.getElementById('scanBtn').disabled = on;
+}
+
+async function runScan(){
+  clearError();
+  const address = document.getElementById('address').value.trim();
+  const chain = selectedChain;
+
+  if(!/^0x[a-fA-F0-9]{40}$/.test(address)){
+    showError("That doesn't look like a valid address (should start with 0x, 42 characters).");
+    return;
+  }
+  if(!isPro && scansUsed >= FREE_LIMIT){
+    showError("You've used today's free scans. Upgrade to Pro below for unlimited scanning.");
+    document.getElementById('pricing').scrollIntoView({behavior:'smooth'});
+    return;
+  }
+  if(scanMode === 'wallet' && !requirePro('Wallet analysis')) return;
+
+  document.getElementById('results').classList.remove('show');
+
+  if(scanMode === 'wallet'){
+    setLoading(true, 'checking wallet reputation...');
+    try{
+      const wsec = await fetchWalletSecurity(chain, address);
+      const analysis = computeWalletRisk(wsec);
+      setLoading(true, 'writing plain-english verdict...');
+      const verdict = await getAiVerdict(analysis, address, chain, 'wallet');
+      renderResults(analysis, null, verdict, address, chain, {}, true);
+      scansUsed++;
+      updateQuota();
+      addRecent(address.slice(0,6), address, chain);
+    }catch(err){
+      console.error(err);
+      showError('Could not complete the wallet check. Try a different address.');
+    }finally{
+      setLoading(false);
+    }
+    return;
+  }
+
+  setLoading(true, 'pulling on-chain security data...');
+  try{
+    const security = await fetchSecurity(chain, address);
+    setLoading(true, 'checking market & liquidity...');
+    const market = await fetchMarket(address);
+    const analysis = computeRisk(security, market);
+    setLoading(true, 'writing plain-english verdict...');
+    const verdict = await getAiVerdict(analysis, address, chain, 'token');
+    renderResults(analysis, market, verdict, address, chain, security, false);
+    scansUsed++;
+    updateQuota();
+    addRecent(security.token_symbol || address.slice(0,6), address, chain);
+  }catch(err){
+    console.error(err);
+    showError('Could not complete the scan. The contract may be too new, unindexed, or unsupported. Try a different address.');
+  }finally{
+    setLoading(false);
+  }
+}
+
+async function fetchWalletSecurity(chainId, address){
+  const res = await fetch(`https://api.gopluslabs.io/api/v1/address_security/${address}?chain_id=${chainId}`);
+  if(!res.ok) throw new Error('address security api failed');
+  const data = await res.json();
+  if(!data.result) throw new Error('no wallet data');
+  return data.result;
+}
+
+function computeWalletRisk(w){
+  let score = 100;
+  const flags = [];
+  const bad=(title,desc,p)=>{flags.push({level:'bad',title,desc});score-=p;};
+  const ok=(title,desc)=>flags.push({level:'ok',title,desc});
+
+  const checks = [
+    ['phishing_activities','Phishing activity','This address has been linked to phishing scams.'],
+    ['blacklist_doubt','Blacklisted','This address appears on a known scam/risk blacklist.'],
+    ['stealing_attack','Theft activity','This address has been linked to fund-stealing attacks.'],
+    ['fake_kyc','Fake KYC','This address has been linked to fake KYC verification schemes.'],
+    ['cybercrime','Cybercrime','This address has been linked to cybercrime activity.'],
+    ['money_laundering','Money laundering','This address has been linked to money laundering.'],
+    ['financial_crime','Financial crime','This address has been linked to financial crime.'],
+    ['darkweb_transactions','Darkweb activity','This address has transacted with darkweb-linked wallets.'],
+    ['mixer','Mixer usage','This address has used a coin mixer, often used to obscure fund origins.'],
+    ['sanctioned','Sanctioned','This address appears on a sanctions list.'],
+    ['malicious_mining','Malicious mining activity','This address has been linked to malicious mining/cryptojacking.'],
+    ['honeypot_related_address','Honeypot-linked','This address is linked to known honeypot token deployments.'],
+  ];
+  let flaggedCount = 0;
+  checks.forEach(([key, title, desc])=>{
+    if(w[key] === '1'){ bad(title, desc, 100/checks.length); flaggedCount++; }
+  });
+  if(flaggedCount === 0) ok('No known red flags', 'This address is not linked to any scam categories GoPlus tracks.');
+
+  score = Math.max(0, Math.min(100, Math.round(score)));
+  let tier, cls, emoji;
+  if(score>=90){tier='Low Risk';cls='safe';emoji='🟢';}
+  else if(score>=60){tier='Medium Risk';cls='warn';emoji='🟡';}
+  else {tier='High Risk';cls='bad';emoji='🔴';}
+
+  const oneliner = flaggedCount===0
+    ? 'No known scam associations found for this wallet in available databases.'
+    : `Flagged for ${flaggedCount} risk categor${flaggedCount>1?'ies':'y'}: ${flags.filter(f=>f.level==='bad').map(f=>f.title).join(', ')}.`;
+
+  return {score, tier, cls, emoji, flags, confidence:80, oneliner, isWallet:true};
+}
+
+function addRecent(symbol, address, chain){
+  recentScans = recentScans.filter(r=>r.address !== address);
+  recentScans.unshift({symbol, address, chain});
+  recentScans = recentScans.slice(0,5);
+  const row = document.getElementById('recentRow');
+  row.style.display = 'flex';
+  row.innerHTML = '<span>Recent:</span>' + recentScans.map(r=>
+    `<span class="recent-chip" data-addr="${r.address}" data-chain="${r.chain}">${r.symbol}</span>`
+  ).join('');
+  row.querySelectorAll('.recent-chip').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      document.getElementById('address').value = el.dataset.addr;
+      selectedChain = el.dataset.chain;
+      document.querySelectorAll('.chain-chip').forEach(c=>c.toggleAttribute('data-active', c.dataset.chain===selectedChain));
+      runScan();
+    });
+  });
+}
+
+async function fetchSecurity(chainId, address){
+  const res = await fetch(`https://api.gopluslabs.io/api/v1/token_security/${chainId}?contract_addresses=${address}`);
+  if(!res.ok) throw new Error('security api failed');
+  const data = await res.json();
+  const key = Object.keys(data.result || {})[0];
+  if(!key) throw new Error('no security data');
+  return data.result[key];
+}
+async function fetchMarket(address){
+  const res = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${address}`);
+  if(!res.ok) return null;
+  const data = await res.json();
+  if(!data.pairs || data.pairs.length===0) return null;
+  return data.pairs.sort((a,b)=>(b.liquidity?.usd||0)-(a.liquidity?.usd||0))[0];
+}
+
+function computeRisk(s, market){
+  let score = 100;
+  let confidence = 95;
+  const flags = [];
+  const bad=(title,desc,p)=>{flags.push({level:'bad',title,desc});score-=p;};
+  const warn=(title,desc,p)=>{flags.push({level:'warn',title,desc});score-=p;};
+  const ok=(title,desc)=>flags.push({level:'ok',title,desc});
+
+  if(s.is_honeypot==='1') bad('Honeypot detected','You may not be able to sell after buying this token.',50);
+  else ok('Not a honeypot','Sell function checked and appears functional.');
+
+  const buyTax=parseFloat(s.buy_tax||0)*100, sellTax=parseFloat(s.sell_tax||0)*100;
+  if(sellTax>=20||buyTax>=20) bad('High tax',`${buyTax.toFixed(1)}% buy / ${sellTax.toFixed(1)}% sell — very high transaction tax.`,25);
+  else if(sellTax>=8||buyTax>=8) warn('Elevated tax',`${buyTax.toFixed(1)}% buy / ${sellTax.toFixed(1)}% sell.`,12);
+  else ok('Reasonable tax',`${buyTax.toFixed(1)}% buy / ${sellTax.toFixed(1)}% sell.`);
+
+  if(s.is_open_source==='0'){ bad('Not verified','Contract source code is closed, so it cannot be audited.',15); confidence -= 15; }
+  else ok('Source verified','Contract code is open and auditable.');
+
+  if(s.is_mintable==='1') warn('Mintable supply','Owner can create unlimited new tokens, diluting holders.',10);
+  if(s.hidden_owner==='1') bad('Hidden owner','Contract owner is concealed, so control is not transparent.',15);
+  if(s.can_take_back_ownership==='1') bad('Ownership reclaimable','Ownership can be taken back even after appearing renounced.',15);
+  if(s.owner_change_balance==='1') bad('Balance manipulation',"Owner can directly change any wallet's token balance.",20);
+  if(s.selfdestruct==='1') warn('Self-destruct present','Contract can be destroyed, potentially wiping holder balances.',10);
+
+  const lp=s.lp_holders||[];
+  const lockedPct=lp.filter(h=>h.is_locked===1).reduce((a,h)=>a+parseFloat(h.percent||0),0)*100;
+  if(lp.length>0){
+    if(lockedPct<30) bad('Liquidity mostly unlocked',`Only ${lockedPct.toFixed(0)}% of liquidity is locked — dev can likely pull it.`,20);
+    else if(lockedPct<70) warn('Liquidity partly locked',`${lockedPct.toFixed(0)}% of liquidity is locked.`,8);
+    else ok('Liquidity locked',`${lockedPct.toFixed(0)}% of liquidity is locked.`);
+  } else { confidence -= 10; }
+
+  const top10=parseFloat(s.top10_holder_rate||0)*100;
+  if(top10>70) bad('Whale concentration',`Top 10 wallets hold ${top10.toFixed(0)}% of supply — heavy dump risk.`,15);
+  else if(top10>40) warn('Notable concentration',`Top 10 wallets hold ${top10.toFixed(0)}% of supply.`,8);
+  else if(top10>0) ok('Healthy distribution',`Top 10 wallets hold ${top10.toFixed(0)}% of supply.`);
+
+  if(s.slippage_modifiable==='1') warn('Adjustable tax','Owner can modify slippage/tax after launch.',8);
+  if(!market){ warn('No active trading pair','Token may be brand new or illiquid — harder to verify market health.',10); confidence -= 15; }
+
+  score=Math.max(0,Math.min(100,Math.round(score)));
+  confidence=Math.max(40,Math.min(98,Math.round(confidence)));
+
+  let tier,cls,emoji;
+  if(score>=80){tier='Low Risk';cls='safe';emoji='🟢';}
+  else if(score>=50){tier='Medium Risk';cls='warn';emoji='🟡';}
+  else if(score>=25){tier='High Risk';cls='warn';emoji='🟡';}
+  else {tier='Critical Risk';cls='bad';emoji='🔴';}
+
+  // build one-liner reason from top 2-3 negative flags, or top positive if all clean
+  const negatives = flags.filter(f=>f.level!=='ok').sort((a,b)=> (a.level==='bad'?0:1) - (b.level==='bad'?0:1));
+  let oneliner;
+  if(negatives.length===0){
+    oneliner = 'No meaningful red flags found: contract is verified, taxes are normal, and liquidity looks locked.';
+  } else {
+    const top = negatives.slice(0,3).map(f=>f.desc.replace(/\\.$/,''));
+    oneliner = top.join('. ') + '.';
+  }
+
+  return {score,tier,cls,emoji,flags,confidence,oneliner};
+}
+
+async function getAiVerdict(analysis,address,chain,subjectType){
+  const flagSummary = analysis.flags.map(f=>`[${f.level.toUpperCase()}] ${f.title}: ${f.desc}`).join('\\n');
+  const subject = subjectType === 'wallet' ? 'wallet address' : 'token contract';
+  const prompt = `You are a crypto security analyst writing a 2-3 sentence plain-English verdict for a retail user about a ${subject}.
+Chain: ${CHAIN_NAMES[chain]}
+Address: ${address}
+Safety score: ${analysis.score}/100 (${analysis.tier})
+Flags:
+${flagSummary}
+
+Write ONLY the verdict paragraph (2-3 sentences, no preamble, no markdown). Focus on what matters most for a decision.`;
+  try{
+    const res = await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({model:"claude-sonnet-4-6", max_tokens:1000, messages:[{role:"user",content:prompt}]})
+    });
+    const data = await res.json();
+    const text = data.content?.map(c=>c.text||'').join('') || '';
+    return text.trim() || analysis.oneliner;
+  }catch(e){ return analysis.oneliner; }
+}
+
+function renderResults(analysis, market, verdict, address, chain, security, isWallet){
+  lastReport = {analysis, market, verdict, address, chain, isWallet};
+  document.getElementById('results').classList.add('show');
+
+  // toggle market-only sections
+  document.querySelectorAll('.market-only').forEach(el=> el.style.display = isWallet ? 'none' : '');
+
+  const colorVar = {safe:'var(--safe)', warn:'var(--warn)', bad:'var(--danger)'};
+  const softVar = {safe:'var(--safe-soft)', warn:'var(--warn-soft)', bad:'var(--danger-soft)'};
+
+  // verdict banner
+  const banner = document.getElementById('verdictBanner');
+  banner.className = 'verdict-banner ' + analysis.cls;
+  document.getElementById('verdictHeadline').textContent = `${analysis.emoji} ${analysis.tier.toUpperCase()} (${analysis.score}/100)`;
+  document.getElementById('verdictOneliner').textContent = analysis.oneliner;
+
+  // gauge
+  const circumference = 238.8;
+  const offset = circumference - (analysis.score/100)*circumference;
+  const arc = document.getElementById('gaugeArc');
+  arc.style.stroke = colorVar[analysis.cls];
+  setTimeout(()=>{ arc.style.strokeDashoffset = offset; }, 50);
+  document.getElementById('gaugeScore').textContent = analysis.score;
+  document.getElementById('gaugeScore').style.color = colorVar[analysis.cls];
+
+  const tierTag = document.getElementById('tierTag');
+  tierTag.textContent = `${analysis.emoji} ${analysis.tier}`;
+  tierTag.style.color = colorVar[analysis.cls];
+  tierTag.style.background = softVar[analysis.cls];
+
+  document.getElementById('verdictDesc').textContent = verdict;
+  document.getElementById('confidenceLine').textContent = `Confidence: ${analysis.confidence}%`;
+
+  // risk cards
+  const list = document.getElementById('riskCards');
+  list.innerHTML = '';
+  const iconMap = {ok:'✓', warn:'!', bad:'×'};
+  const sevMap = {ok:'Clear', warn:'Medium', bad:'High'};
+  const shown = analysis.flags.slice(0, 5);
+  const hidden = analysis.flags.slice(5);
+  shown.forEach(f=>{
+    const div=document.createElement('div'); div.className=`risk-card ${f.level}`;
+    div.innerHTML = `<div class="risk-icon">${iconMap[f.level]}</div>
+      <div style="flex:1;"><div class="risk-title">${f.title}</div><div class="risk-desc">${f.desc}</div></div>
+      <div class="risk-sev">${sevMap[f.level]}</div>`;
+    list.appendChild(div);
+  });
+  document.getElementById('lockOverlay').style.display = hidden.length > 0 ? 'flex' : 'none';
+  if(hidden.length > 0) document.getElementById('lockCount').textContent = `${hidden.length} more check${hidden.length>1?'s':''} hidden.`;
+
+  // market stats
+  const grid = document.getElementById('statGrid');
+  grid.innerHTML = '';
+  let ageStr = '—';
+  if(market?.pairCreatedAt){
+    const days = Math.floor((Date.now() - market.pairCreatedAt) / 86400000);
+    ageStr = days < 1 ? '< 1 day' : `${days} day${days===1?'':'s'}`;
+  }
+  const stats = market ? [
+    ['Market Cap', market.fdv ? `$${Math.round(market.fdv).toLocaleString()}` : '—'],
+    ['Liquidity', market.liquidity?.usd ? `$${Math.round(market.liquidity.usd).toLocaleString()}` : '—'],
+    ['24h Volume', market.volume?.h24 ? `$${Math.round(market.volume.h24).toLocaleString()}` : '—'],
+    ['Pair Age', ageStr],
+    ['Holders', security.holder_count ? Number(security.holder_count).toLocaleString() : '—'],
+    ['24h Change', market.priceChange?.h24 !== undefined ? `${market.priceChange.h24}%` : '—'],
+  ] : [['Market Cap','—'],['Liquidity','No pair found'],['24h Volume','—'],['Pair Age','—'],['Holders', security.holder_count ? Number(security.holder_count).toLocaleString() : '—'],['24h Change','—']];
+  stats.forEach(([label,value])=>{
+    const div=document.createElement('div'); div.className='stat';
+    div.innerHTML = `<div class="stat-label">${label}</div><div class="stat-value">${value}</div>`;
+    grid.appendChild(div);
+  });
+
+  document.getElementById('scanTime').textContent = `Last updated: just now`;
+}
+
+document.getElementById('copyBtn').addEventListener('click', ()=>{
+  if(!lastReport) return;
+  const {analysis, address, chain, verdict} = lastReport;
+  const text = `Verisyn scan — ${CHAIN_NAMES[chain]} ${address}\\n${analysis.emoji} ${analysis.tier} (${analysis.score}/100)\\n${verdict}`;
+  navigator.clipboard?.writeText(text);
+  const btn = document.getElementById('copyBtn');
+  const orig = btn.textContent; btn.textContent = '✓ Copied!';
+  setTimeout(()=>btn.textContent=orig, 1500);
+});
+document.getElementById('shareTwBtn').addEventListener('click', ()=>{
+  if(!lastReport) return;
+  const {analysis, chain, address} = lastReport;
+  const link = buildShareUrl(address, chain);
+  const text = encodeURIComponent(`Scanned a token on ${CHAIN_NAMES[chain]} with Verisyn: ${analysis.emoji} ${analysis.tier} (${analysis.score}/100). Check yours before you ape in 👇\\n${link}`);
+  window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
+});
+
+document.getElementById('embedBtn').addEventListener('click', ()=>{
+  if(!lastReport) return;
+  const {address, chain} = lastReport;
+  const src = buildBadgeUrl(address, chain);
+  const code = `<iframe src="${src}" width="260" height="90" style="border:none;border-radius:10px;" title="Verisyn safety score"></iframe>`;
+  const box = document.getElementById('embedBox');
+  const ta = document.getElementById('embedCode');
+  ta.value = code;
+  box.classList.add('show');
+  ta.select();
+  navigator.clipboard?.writeText(code);
+  const btn = document.getElementById('embedBtn');
+  const orig = btn.textContent; btn.textContent = '✓ Copied embed code';
+  setTimeout(()=>btn.textContent=orig, 1800);
+});
+
+// --- init: handle shared links + badge mode + trending ---
+(function init(){
+  loadProState();
+  reflectProUI();
+
+  const params = new URLSearchParams(location.search);
+  const sharedAddress = params.get('a');
+  const sharedChain = params.get('c');
+  const isBadge = params.get('badge') === '1';
+
+  if(isBadge){
+    document.body.classList.add('badge-mode');
+    if(sharedAddress && sharedChain){
+      selectedChain = sharedChain;
+      document.getElementById('address').value = sharedAddress;
+      runScan().then(()=>{
+        const link = document.getElementById('badgeLink');
+        link.href = buildShareUrl(sharedAddress, sharedChain);
+        link.style.display = 'block';
+      });
+    }
+    return; // skip trending + normal banners in badge mode
+  }
+
+  if(sharedAddress && sharedChain && CHAIN_NAMES[sharedChain]){
+    selectedChain = sharedChain;
+    document.getElementById('address').value = sharedAddress;
+    document.querySelectorAll('.chain-chip').forEach(c=>c.toggleAttribute('data-active', c.dataset.chain===selectedChain));
+    document.getElementById('sharedBanner').style.display = 'block';
+    runScan();
+  }
+
+  loadTrending();
+})();
+</script>
+</body>
+</html>
