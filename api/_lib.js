@@ -70,6 +70,45 @@ export async function saveUserRecord(email, record) {
   await kv.set(`user:${email}`, JSON.stringify(record));
 }
 
+// Used by passwordless flows (magic link, Google) — creates the account on
+// first sign-in if it doesn't exist yet, with no password set.
+export async function getOrCreateUser(email) {
+  let record = await getUserRecord(email);
+  if (!record) {
+    record = { isPro: false, createdAt: Date.now(), authMethod: 'passwordless' };
+    await saveUserRecord(email, record);
+  }
+  return record;
+}
+
+export function setShortCookie(res, name, value, maxAgeSeconds) {
+  res.setHeader('Set-Cookie', `${name}=${value}; Path=/; Max-Age=${maxAgeSeconds}; HttpOnly; Secure; SameSite=Lax`);
+}
+
+// Sends a magic sign-in link via Resend (free tier: 100 emails/day, no card).
+// Requires RESEND_API_KEY env var. Silently no-ops with a console warning if
+// it's not set yet, so local testing doesn't hard-crash before that's configured.
+export async function sendMagicLinkEmail(email, link) {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    console.warn('RESEND_API_KEY not set — cannot send magic link email.');
+    return false;
+  }
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      from: process.env.MAGIC_LINK_FROM || 'Verisyn <onboarding@resend.dev>',
+      to: email,
+      subject: 'Your Verisyn sign-in link',
+      html: `<p>Click below to sign in to Verisyn:</p>
+             <p><a href="${link}" style="background:#2451FF;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:600;">Sign in to Verisyn</a></p>
+             <p style="color:#888;font-size:13px;">This link expires in 15 minutes. If you didn't request this, you can ignore this email.</p>`
+    })
+  });
+  return res.ok;
+}
+
 export function todayKey() {
   return new Date().toISOString().slice(0, 10); // YYYY-MM-DD, used so quotas reset daily
 }
