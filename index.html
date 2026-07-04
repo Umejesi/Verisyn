@@ -556,6 +556,7 @@
         <li>Wallet analysis</li>
         <li>Whale &amp; holder analysis</li>
         <li>Unlimited watchlists</li>
+        <li>Email alerts on ownership, tax & liquidity changes</li>
         <li>Export reports</li>
         <li>Pro access for life</li>
       </ul>
@@ -651,6 +652,7 @@ async function refreshAuthState(){
     isLoggedIn = false; userEmail = null; isPro = false; currentTier = 'guest';
   }
   reflectProUI();
+  if(isPro) loadServerWatchlist();
 }
 
 function reflectProUI(){
@@ -859,7 +861,7 @@ function setMode(mode){
   document.getElementById('results').classList.remove('show');
 }
 
-// --- watchlist: stored in localStorage when available, falls back to session-only ---
+// --- watchlist: localStorage for free/guest; server-synced for Pro (needed for real alerts) ---
 function storageAvailable(){
   try{ const k='__t'; localStorage.setItem(k,'1'); localStorage.removeItem(k); return true; }catch(e){ return false; }
 }
@@ -872,11 +874,20 @@ function saveWatchlist(){
   if(!HAS_STORAGE) return;
   try{ localStorage.setItem('verisyn_watchlist', JSON.stringify(watchlist)); }catch(e){}
 }
+async function loadServerWatchlist(){
+  try{
+    const res = await fetch('/api/watchlist', { credentials:'include' });
+    if(!res.ok) return;
+    const data = await res.json();
+    watchlist = (data.items||[]).map(i=>({label:i.label, address:i.address, chain:i.chain, mode:'token'}));
+    renderWatchlist();
+  }catch(e){ /* stay on whatever's already loaded */ }
+}
 function renderWatchlist(){
   const row = document.getElementById('watchlistRow');
   if(watchlist.length === 0){ row.style.display = 'none'; return; }
   row.style.display = 'flex';
-  row.innerHTML = '<span>⭐ Watchlist:</span>' + watchlist.map((w,i)=>
+  row.innerHTML = '<span>⭐ Watchlist' + (isPro ? ' (alerts on)' : '') + ':</span>' + watchlist.map((w,i)=>
     `<span class="watch-chip"><span class="go" data-i="${i}">${w.label}</span><span class="rm" data-i="${i}">×</span></span>`
   ).join('');
   row.querySelectorAll('.go').forEach(el=> el.addEventListener('click', ()=>{
@@ -887,30 +898,48 @@ function renderWatchlist(){
     document.querySelectorAll('.chain-chip').forEach(c=>c.toggleAttribute('data-active', c.dataset.chain===selectedChain));
     runScan();
   }));
-  row.querySelectorAll('.rm').forEach(el=> el.addEventListener('click', (e)=>{
+  row.querySelectorAll('.rm').forEach(el=> el.addEventListener('click', async (e)=>{
     e.stopPropagation();
-    watchlist.splice(parseInt(el.dataset.i), 1);
-    saveWatchlist();
-    renderWatchlist();
+    const w = watchlist[parseInt(el.dataset.i)];
+    if(isPro){
+      await fetch(`/api/watchlist?address=${w.address}`, { method:'DELETE', credentials:'include' });
+      await loadServerWatchlist();
+    } else {
+      watchlist.splice(parseInt(el.dataset.i), 1);
+      saveWatchlist();
+      renderWatchlist();
+    }
   }));
 }
 watchlist = loadWatchlist();
 renderWatchlist();
 
-document.getElementById('watchBtn').addEventListener('click', ()=>{
+document.getElementById('watchBtn').addEventListener('click', async ()=>{
   if(!lastReport) return;
   const {address, chain, isWallet} = lastReport;
-  if(watchlist.some(w=>w.address===address && w.mode===(isWallet?'wallet':'token'))) return;
-  if(!isPro && watchlist.length >= 1){
-    showError('Free plan allows 1 saved watchlist item. Upgrade to Pro for unlimited watchlists.');
-    document.getElementById('pricing').scrollIntoView({behavior:'smooth'});
-    return;
+  if(watchlist.some(w=>w.address===address)) return;
+
+  if(isPro){
+    if(!isLoggedIn){ openAuthModal('login'); return; }
+    const label = `${address.slice(0,6)}…${address.slice(-4)}`;
+    await fetch('/api/watchlist', {
+      method:'POST', credentials:'include', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({address, chain, label})
+    });
+    await loadServerWatchlist();
+  } else {
+    if(watchlist.length >= 1){
+      showError('Free plan allows 1 saved watchlist item. Upgrade to Pro for unlimited watchlists with real alerts.');
+      document.getElementById('pricing').scrollIntoView({behavior:'smooth'});
+      return;
+    }
+    const label = `${address.slice(0,6)}…${address.slice(-4)}`;
+    watchlist.unshift({label, address, chain, mode: isWallet?'wallet':'token'});
+    watchlist = watchlist.slice(0, 1);
+    saveWatchlist();
+    renderWatchlist();
   }
-  const label = `${address.slice(0,6)}…${address.slice(-4)}`;
-  watchlist.unshift({label, address, chain, mode: isWallet?'wallet':'token'});
-  watchlist = isPro ? watchlist.slice(0, 50) : watchlist.slice(0, 1);
-  saveWatchlist();
-  renderWatchlist();
+
   const btn = document.getElementById('watchBtn');
   const orig = btn.textContent; btn.textContent = '✓ Saved';
   setTimeout(()=>btn.textContent=orig, 1500);
@@ -1332,13 +1361,12 @@ ${flagSummary}
 
 Write ONLY the verdict paragraph (2-3 sentences, no preamble, no markdown). Focus on what matters most for a decision.`;
   try{
-    const res = await fetch("https://api.anthropic.com/v1/messages",{
+    const res = await fetch('/api/ai-verdict', {
       method:"POST", headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({model:"claude-sonnet-4-6", max_tokens:1000, messages:[{role:"user",content:prompt}]})
+      body: JSON.stringify({ prompt })
     });
     const data = await res.json();
-    const text = data.content?.map(c=>c.text||'').join('') || '';
-    return text.trim() || analysis.oneliner;
+    return (data.text && data.text.trim()) || analysis.oneliner;
   }catch(e){ return analysis.oneliner; }
 }
 
