@@ -93,6 +93,10 @@ export default async function handler(req, res) {
         await kv.sadd('verisyn:valid_codes', code);
         await kv.set(`paystack:ref:${reference}`, code, { ex: 60 * 60 * 24 }); // 24h pickup window
         console.log(`Generated Pro code ${code} for ${email} (ref: ${reference})`);
+
+        if (event.data?.metadata?.plan === 'founding') {
+          await kv.incr('verisyn:founding_claimed');
+        }
       }
     }
   }
