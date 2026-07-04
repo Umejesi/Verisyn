@@ -1,13 +1,15 @@
 // api/paystack-webhook.js
 // Verisyn Paystack webhook — Vercel serverless function.
 //
-// WHAT THIS DOES:
-// Paystack calls this URL automatically every time a payment event happens.
-// On a successful charge, it generates a Pro code, stores it two ways:
-//   1. Added to the same `verisyn:valid_codes` set your manual /api/redeem already checks
-//      (so it works exactly like a manually-issued code — no separate logic to maintain).
-//   2. Mapped to the payment's unique `reference` for 24 hours, so the site can look it up
-//      right after payment and unlock Pro automatically without the user typing anything.
+// WHAT THIS DOES NOW (real recurring subscriptions, not one-time codes):
+// Paystack calls this URL on every payment event. When a charge succeeds —
+// whether it's the first payment or an automatic monthly renewal — this
+// looks up the paying customer's account by email and sets isPro = true
+// directly on their account record. When Paystack reports a subscription was
+// cancelled or stopped renewing, this sets isPro = false the same way.
+// A backup one-time code is still generated on each successful charge purely
+// as a receipt/fallback the frontend can display — the real activation no
+// longer depends on that code being redeemed.
 //
 // SETUP (once your Paystack account is verified):
 // 1. Vercel -> Settings -> Environment Variables -> add:
@@ -15,8 +17,8 @@
 // 2. Paystack Dashboard -> Settings -> API Keys & Webhooks -> Webhook URL:
 //      https://<your-vercel-domain>/api/paystack-webhook
 // 3. Redeploy so the env var takes effect.
-// 4. Test with a real (or Paystack test-mode) payment and check Vercel's runtime logs
-//    to confirm you see "Generated Pro code ..." in the output.
+// 4. Test with a real (or Paystack test-mode) subscription payment and check
+//    Vercel's runtime logs to confirm "Activated Pro (...) for ..." appears.
 //
 // IMPORTANT IF YOU REUSE THIS PAYSTACK ACCOUNT FOR OTHER SITES:
 // Paystack webhooks are set per-account, not per-website — so this same URL would
@@ -27,9 +29,7 @@
 // tag and point it at a different endpoint file.
 
 import crypto from 'crypto';
-import { Redis } from '@upstash/redis';
-
-const kv = Redis.fromEnv();
+import { kv, getUserRecord, saveUserRecord } from './_lib.js';
 
 // We need the exact raw request bytes to verify Paystack's signature, so we
 // disable Vercel's automatic JSON body parsing and read the stream ourselves.
@@ -72,31 +72,58 @@ export default async function handler(req, res) {
   let event;
   try { event = JSON.parse(rawBody); } catch { res.status(400).end('Bad payload'); return; }
 
+  // --- Real subscription payment (first charge or a renewal) ---
   if (event.event === 'charge.success') {
     const reference = event.data?.reference;
-    const email = event.data?.customer?.email || 'unknown';
+    const email = event.data?.customer?.email?.toLowerCase();
     const product = event.data?.metadata?.product;
+    const planTag = event.data?.metadata?.plan; // 'pro' | 'founding' | 'proplus'
+    const isSubscriptionCharge = !!event.data?.plan?.plan_code;
 
-    // If this Paystack account is shared across multiple sites/products, the same
-    // account-level webhook fires for ALL of them. Only act on payments tagged
-    // for Verisyn specifically — everything else is silently ignored here.
     if (product !== 'verisyn') {
       console.log(`Ignoring charge ${reference} — not tagged for Verisyn (product: ${product || 'none'}).`);
       res.status(200).json({ received: true, ignored: true });
       return;
     }
 
+    // Directly activate the account by email — reliable for both the first
+    // payment and every future renewal, no code redemption required.
+    if (email) {
+      const record = await getUserRecord(email);
+      if (record) {
+        record.isPro = true;
+        record.plan = planTag || record.plan || 'pro';
+        record.subscriptionCode = event.data?.subscription_code || record.subscriptionCode || null;
+        await saveUserRecord(email, record);
+        console.log(`Activated Pro (${record.plan}) for ${email} via ${isSubscriptionCharge ? 'subscription' : 'one-time'} charge.`);
+      }
+    }
+
+    // Still generate a backup code too — this is what the frontend's polling
+    // flow displays as a receipt right after checkout. Harmless if unused.
     if (reference) {
       const already = await kv.get(`paystack:ref:${reference}`);
       if (!already) {
         const code = generateCode();
         await kv.sadd('verisyn:valid_codes', code);
-        await kv.set(`paystack:ref:${reference}`, code, { ex: 60 * 60 * 24 }); // 24h pickup window
-        console.log(`Generated Pro code ${code} for ${email} (ref: ${reference})`);
+        await kv.set(`paystack:ref:${reference}`, code, { ex: 60 * 60 * 24 });
 
-        if (event.data?.metadata?.plan === 'founding') {
+        if (planTag === 'founding') {
           await kv.incr('verisyn:founding_claimed');
         }
+      }
+    }
+  }
+
+  // --- Subscription cancelled, expired, or payments stopped ---
+  if (event.event === 'subscription.disable' || event.event === 'subscription.not_renew') {
+    const email = event.data?.customer?.email?.toLowerCase();
+    if (email) {
+      const record = await getUserRecord(email);
+      if (record && record.isPro) {
+        record.isPro = false;
+        await saveUserRecord(email, record);
+        console.log(`Deactivated Pro for ${email} — subscription ${event.event}.`);
       }
     }
   }
