@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Whale & Holder Analysis — Verisyn</title>
+<meta name="description" content="See exactly who holds a token — top wallets, team allocation, and whale concentration — before you buy.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%232451FF'/%3E%3Crect x='22' y='47' width='56' height='6' rx='3' fill='white'/%3E%3C/svg%3E">
+<style>
+  :root[data-theme="dark"]{
+    --canvas:#0B0E13; --surface:#12161D; --surface-2:#181D26; --ink:#EDEFF2;
+    --ink-soft:#9BA3AE; --ink-faint:#5E6670; --line:#232933; --blue:#4C7CFF;
+    --blue-soft:#182238; --safe:#22C57D; --safe-soft:#10241C;
+    --warn:#F0B429; --warn-soft:#2A2213; --danger:#F4555C; --danger-soft:#2B171B;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;background:var(--canvas);color:var(--ink);font-family:'Inter',sans-serif;}
+  h1,h2,h3{font-family:'Space Grotesk',sans-serif;}
+  a{color:inherit;}
+  .container{max-width:760px;margin:0 auto;padding:0 20px;}
+
+  header{border-bottom:1px solid var(--line);background:var(--surface);}
+  .headbar{display:flex;align-items:center;justify-content:space-between;padding:14px 0;}
+  .logo{display:flex;align-items:center;gap:9px;font-weight:700;font-size:18px;text-decoration:none;color:var(--ink);}
+  .logo-mark{width:22px;height:22px;border-radius:6px;background:var(--blue);position:relative;flex-shrink:0;}
+  .logo-mark::after{content:'';position:absolute;left:4px;right:4px;height:2px;background:#fff;top:50%;
+    transform:translateY(-50%);border-radius:2px;box-shadow:0 -6px 0 rgba(255,255,255,0.45), 0 6px 0 rgba(255,255,255,0.45);}
+  .nav-link{font-size:13.5px;color:var(--ink-soft);text-decoration:none;margin-left:16px;}
+
+  .hero{padding:40px 0 4px;}
+  .eyebrow{font-size:12.5px;font-weight:600;color:var(--blue);letter-spacing:0.4px;text-transform:uppercase;margin-bottom:10px;}
+  h1{font-size:28px;line-height:1.15;margin:0 0 10px;letter-spacing:-0.5px;}
+  .sub{color:var(--ink-soft);font-size:14.5px;line-height:1.5;margin:0 0 22px;max-width:520px;}
+
+  .scan-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;}
+  .chain-row{display:flex;gap:7px;margin-bottom:10px;flex-wrap:wrap;}
+  .chain-chip{display:flex;align-items:center;gap:6px;background:var(--surface-2);border:1.5px solid var(--line);
+    border-radius:8px;padding:8px 12px;font-size:13px;font-weight:600;cursor:pointer;color:var(--ink-soft);}
+  .chain-chip .dot{width:8px;height:8px;border-radius:50%;}
+  .chain-chip[data-active="true"]{border-color:var(--blue);color:var(--ink);background:var(--blue-soft);}
+  .scan-row{display:flex;gap:8px;flex-wrap:wrap;}
+  input[type=text]{background:var(--surface-2);border:1px solid var(--line);color:var(--ink);
+    border-radius:8px;padding:12px 13px;font-size:14px;font-family:'IBM Plex Mono',monospace;flex:1 1 220px;min-width:0;}
+  input:focus{outline:none;border-color:var(--blue);}
+  button.scan-btn{background:var(--blue);color:#fff;border:none;border-radius:8px;padding:12px 22px;
+    font-weight:600;font-size:14px;cursor:pointer;flex:0 0 auto;}
+  button.scan-btn:disabled{background:var(--ink-faint);cursor:not-allowed;}
+  .examples{margin-top:10px;font-size:12.5px;color:var(--ink-faint);}
+  .chip{background:var(--surface-2);border:1px solid var(--line);color:var(--ink-soft);font-size:12px;
+    padding:5px 11px;border-radius:20px;margin:6px 6px 0 0;cursor:pointer;font-family:'IBM Plex Mono',monospace;}
+  .chip:hover{border-color:var(--blue);color:var(--blue);}
+
+  .loading-text{display:none;align-items:center;gap:8px;color:var(--ink-soft);font-size:13px;margin-top:12px;font-family:'IBM Plex Mono',monospace;}
+  .loading-text.show{display:flex;}
+  .spin{width:13px;height:13px;border:2px solid var(--line);border-top-color:var(--blue);border-radius:50%;animation:spin 0.7s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .error-box{display:none;background:var(--danger-soft);border:1px solid var(--danger);color:var(--danger);
+    border-radius:9px;padding:13px 15px;font-size:13.5px;margin-top:14px;}
+  .error-box.show{display:block;}
+  .quota-text{font-size:12.5px;color:var(--ink-soft);margin-top:14px;text-align:right;}
+
+  #results{display:none;margin-top:18px;}
+  #results.show{display:block;}
+
+  .summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+  .summary-card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;}
+  .summary-label{font-size:11px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;}
+  .summary-value{font-size:20px;font-weight:700;font-family:'Space Grotesk',sans-serif;}
+  .summary-value.safe{color:var(--safe);} .summary-value.warn{color:var(--warn);} .summary-value.bad{color:var(--danger);}
+  .summary-note{font-size:11.5px;color:var(--ink-soft);margin-top:4px;}
+
+  .section-label{font-size:12px;font-weight:700;color:var(--ink-faint);text-transform:uppercase;
+    letter-spacing:1px;margin:20px 0 10px 2px;}
+
+  table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;}
+  th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--ink-faint);
+    padding:10px 12px;border-bottom:1px solid var(--line);background:var(--surface-2);}
+  td{padding:10px 12px;font-size:13px;border-bottom:1px solid var(--line);font-family:'IBM Plex Mono',monospace;}
+  tr:last-child td{border-bottom:none;}
+  .tag{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:20px;margin-left:6px;
+    font-family:'Inter',sans-serif;text-transform:uppercase;}
+  .tag.locked{background:var(--safe-soft);color:var(--safe);}
+  .tag.contract{background:var(--blue-soft);color:var(--blue);}
+  .bar-bg{background:var(--surface-2);border-radius:20px;height:6px;width:100%;overflow:hidden;margin-top:4px;}
+  .bar-fill{height:100%;background:var(--blue);border-radius:20px;}
+
+  .concentration-note{font-size:13px;color:var(--ink-soft);line-height:1.5;background:var(--surface);
+    border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-top:16px;}
+
+  footer{text-align:center;color:var(--ink-faint);font-size:12px;padding:36px 0 60px;line-height:1.7;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container headbar">
+    <a class="logo" href="/"><div class="logo-mark"></div>Verisyn</a>
+    <div>
+      <a class="nav-link" href="/">Scanner</a>
+      <a class="nav-link" href="/#pricing">Pricing</a>
+    </div>
+  </div>
+</header>
+
+<div class="container hero">
+  <div class="eyebrow">Whale &amp; Holder Analysis</div>
+  <h1>See who really holds this token.</h1>
+  <p class="sub">Top wallets, team allocation, and whale concentration — the ownership breakdown most scanners bury in a single percentage.</p>
+</div>
+
+<div class="container">
+  <div class="scan-card">
+    <div class="chain-row" id="chainRow">
+      <div class="chain-chip" data-chain="1" data-active="true"><span class="dot" style="background:#627EEA"></span>ETH</div>
+      <div class="chain-chip" data-chain="56"><span class="dot" style="background:#F0B90B"></span>BSC</div>
+      <div class="chain-chip" data-chain="8453"><span class="dot" style="background:#0052FF"></span>Base</div>
+      <div class="chain-chip" data-chain="42161"><span class="dot" style="background:#28A0F0"></span>Arbitrum</div>
+    </div>
+    <div class="scan-row">
+      <input type="text" id="address" placeholder="0x... contract address">
+      <button class="scan-btn" id="scanBtn">Analyze</button>
+    </div>
+    <div class="examples">
+      Try: <span class="chip" data-addr="0x6982508145454ce325ddbe47a25d4ec3d2311933" data-chain="1">PEPE · ETH</span>
+      <span class="chip" data-addr="0x10f6f2b97f3ab29583d9d38babf2994df7220c21" data-chain="56">TEDDY · BSC</span>
+    </div>
+    <div class="loading-text" id="loadingText"><div class="spin"></div><span>pulling holder data...</span></div>
+    <div class="error-box" id="errorBox"></div>
+    <div class="quota-text" id="quotaText"></div>
+  </div>
+
+  <div id="results">
+    <div class="summary-grid">
+      <div class="summary-card">
+        <div class="summary-label">Top 10 Concentration</div>
+        <div class="summary-value" id="top10Value">—</div>
+        <div class="summary-note" id="top10Note"></div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">Total Holders</div>
+        <div class="summary-value" id="holderCountValue">—</div>
+        <div class="summary-note">Wallets currently holding this token</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">Owner Holds</div>
+        <div class="summary-value" id="ownerValue">—</div>
+        <div class="summary-note">% of supply held by the contract owner</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">Creator Holds</div>
+        <div class="summary-value" id="creatorValue">—</div>
+        <div class="summary-note">% of supply held by the deployer wallet</div>
+      </div>
+    </div>
+
+    <div class="section-label">Top 10 Holders</div>
+    <table>
+      <thead><tr><th>Address</th><th>% of Supply</th><th></th></tr></thead>
+      <tbody id="holdersTable"></tbody>
+    </table>
+
+    <div class="concentration-note" id="concentrationNote"></div>
+  </div>
+</div>
+
+<footer>
+  Data from GoPlus Security. Uses the same daily scan quota as the main scanner. Not financial advice.
+</footer>
+
+<script>
+const CHAIN_NAMES = {1:'Ethereum',56:'BSC',8453:'Base',42161:'Arbitrum'};
+let selectedChain = '1';
+
+function getGuestId(){
+  try{
+    let id = localStorage.getItem('verisyn_guest_id');
+    if(!id){ id = crypto.randomUUID(); localStorage.setItem('verisyn_guest_id', id); }
+    return id;
+  }catch(e){ return 'temp-' + Math.random().toString(36).slice(2); }
+}
+
+document.querySelectorAll('.chain-chip').forEach(chip=>{
+  chip.addEventListener('click', ()=>{
+    document.querySelectorAll('.chain-chip').forEach(c=>c.removeAttribute('data-active'));
+    chip.setAttribute('data-active','true');
+    selectedChain = chip.dataset.chain;
+  });
+});
+document.querySelectorAll('.chip').forEach(el=>{
+  el.addEventListener('click', ()=>{
+    document.getElementById('address').value = el.dataset.addr;
+    selectedChain = el.dataset.chain;
+    document.querySelectorAll('.chain-chip').forEach(c=>c.toggleAttribute('data-active', c.dataset.chain===selectedChain));
+    runAnalysis();
+  });
+});
+document.getElementById('scanBtn').addEventListener('click', runAnalysis);
+document.getElementById('address').addEventListener('keydown', e=>{ if(e.key==='Enter') runAnalysis(); });
+
+function showError(msg){ const b=document.getElementById('errorBox'); b.textContent=msg; b.classList.add('show'); }
+function clearError(){ document.getElementById('errorBox').classList.remove('show'); }
+function setLoading(on){
+  document.getElementById('loadingText').classList.toggle('show', on);
+  document.getElementById('scanBtn').disabled = on;
+}
+
+async function runAnalysis(){
+  clearError();
+  const address = document.getElementById('address').value.trim();
+  const chain = selectedChain;
+  if(!/^0x[a-fA-F0-9]{40}$/.test(address)){
+    showError("That doesn't look like a valid contract address.");
+    return;
+  }
+
+  document.getElementById('results').classList.remove('show');
+  setLoading(true);
+
+  try{
+    const res = await fetch('/api/scan', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ address, chain, mode:'token', guestId: getGuestId() })
+    });
+    const payload = await res.json();
+    if(!res.ok){
+      showError(payload.error || 'Analysis failed.');
+      return;
+    }
+    document.getElementById('quotaText').textContent = payload.tier === 'pro'
+      ? '⭐ Pro — unlimited scans'
+      : payload.remaining !== null ? `${payload.remaining} scans left today` : '';
+    renderHolders(payload.security);
+  }catch(err){
+    console.error(err);
+    showError('Could not complete the analysis. Try again shortly.');
+  }finally{
+    setLoading(false);
+  }
+}
+
+function renderHolders(s){
+  document.getElementById('results').classList.add('show');
+
+  const top10 = parseFloat(s.top10_holder_rate || 0) * 100;
+  const top10El = document.getElementById('top10Value');
+  top10El.textContent = `${top10.toFixed(1)}%`;
+  top10El.className = 'summary-value ' + (top10>70?'bad':top10>40?'warn':'safe');
+  document.getElementById('top10Note').textContent = top10>70
+    ? 'Very high — a few wallets could crash the price.'
+    : top10>40 ? 'Moderate — worth watching.' : 'Healthy distribution.';
+
+  document.getElementById('holderCountValue').textContent = s.holder_count ? Number(s.holder_count).toLocaleString() : '—';
+
+  const ownerPct = s.owner_percent ? (parseFloat(s.owner_percent)*100) : null;
+  document.getElementById('ownerValue').textContent = ownerPct !== null ? `${ownerPct.toFixed(1)}%` : 'N/A';
+
+  const creatorPct = s.creator_percent ? (parseFloat(s.creator_percent)*100) : null;
+  document.getElementById('creatorValue').textContent = creatorPct !== null ? `${creatorPct.toFixed(1)}%` : 'N/A';
+
+  const holders = (s.holders || []).slice(0, 10);
+  const tbody = document.getElementById('holdersTable');
+  tbody.innerHTML = '';
+  if(holders.length === 0){
+    tbody.innerHTML = `<tr><td colspan="3" style="color:var(--ink-faint);">No holder data available for this token.</td></tr>`;
+  }
+  holders.forEach(h=>{
+    const pct = parseFloat(h.percent||0) * 100;
+    const short = h.address ? `${h.address.slice(0,8)}…${h.address.slice(-6)}` : 'Unknown';
+    const tags = [];
+    if(h.is_contract === 1) tags.push('<span class="tag contract">Contract</span>');
+    if(h.is_locked === 1) tags.push('<span class="tag locked">Locked</span>');
+    if(h.tag) tags.push(`<span class="tag contract">${h.tag}</span>`);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${short}${tags.join('')}</td>
+      <td>${pct.toFixed(2)}%<div class="bar-bg"><div class="bar-fill" style="width:${Math.min(100,pct)}%"></div></div></td>
+      <td></td>`;
+    tbody.appendChild(tr);
+  });
+
+  const note = document.getElementById('concentrationNote');
+  if(top10 > 70){
+    note.textContent = `The top 10 wallets control ${top10.toFixed(0)}% of the entire supply. If even one or two of these decide to sell, it can crash the price for everyone else — and there's no way to know from this data alone whether these are team wallets, exchange wallets, or independent holders.`;
+  } else if(top10 > 40){
+    note.textContent = `Ownership is moderately concentrated. Check whether the largest wallets are tagged as contracts, exchanges, or locked allocations — unlabeled personal wallets holding large shares carry more risk than labeled ones.`;
+  } else {
+    note.textContent = `Ownership looks reasonably spread out across holders, which reduces (but doesn't eliminate) the risk of a single large holder crashing the price.`;
+  }
+}
+</script>
+</body>
+</html>
