@@ -287,6 +287,15 @@
     margin-bottom:14px;}
   .auth-close{cursor:pointer;color:var(--ink-faint);font-size:20px;line-height:1;}
   .auth-close:hover{color:var(--ink);}
+  .google-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;
+    background:#fff;color:#1F1F1F;border:1px solid var(--line);border-radius:8px;padding:11px;
+    font-weight:600;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif;}
+  .google-btn:hover{background:#f5f5f5;}
+  .auth-divider{text-align:center;color:var(--ink-faint);font-size:11.5px;margin:14px 0;
+    text-transform:uppercase;letter-spacing:0.5px;}
+  .auth-toggle-link{display:block;text-align:center;font-size:12.5px;color:var(--blue);
+    text-decoration:none;margin-top:10px;font-weight:600;}
+
   .auth-modal input{width:100%;padding:11px 12px;border-radius:8px;border:1px solid var(--line);
     background:var(--surface-2);color:var(--ink);font-size:13.5px;font-family:'Inter',sans-serif;margin-bottom:8px;}
   .auth-modal button{width:100%;background:var(--blue);color:#fff;border:none;border-radius:8px;padding:11px;
@@ -348,17 +357,34 @@
 <div class="auth-overlay" id="authOverlay">
   <div class="auth-modal">
     <div class="auth-head">
-      <span id="authTitle">Log in</span>
+      <span id="authTitle">Sign in to Verisyn</span>
       <span class="auth-close" id="authClose">×</span>
     </div>
-    <input type="email" id="authEmail" placeholder="you@email.com">
-    <input type="password" id="authPassword" placeholder="Password (min 6 characters)">
-    <button id="authSubmit">Log in</button>
-    <div class="auth-status" id="authStatus"></div>
-    <div class="auth-switch">
-      <span id="authSwitchText">Don't have an account?</span>
-      <a href="#" id="authSwitchLink">Sign up</a>
+
+    <button id="googleAuthBtn" class="google-btn">
+      <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84c-.21 1.13-.84 2.08-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.81.54-1.85.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.33C2.44 15.98 5.48 18 9 18z"/><path fill="#FBBC05" d="M3.97 10.72c-.18-.54-.28-1.12-.28-1.72s.1-1.18.28-1.72V4.95H.96A8.996 8.996 0 000 9c0 1.45.35 2.83.96 4.05l3.01-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.51.45 3.44 1.35l2.59-2.59C13.46.89 11.43 0 9 0 5.48 0 2.44 2.02.96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58z"/></svg>
+      Continue with Google
+    </button>
+
+    <div class="auth-divider">or</div>
+
+    <input type="email" id="magicEmail" placeholder="you@email.com">
+    <button id="magicSubmit">Email me a sign-in link</button>
+    <div class="auth-status" id="magicStatus"></div>
+
+    <div class="auth-divider">or use a password instead</div>
+
+    <div id="passwordFields" style="display:none;">
+      <input type="email" id="authEmail" placeholder="you@email.com">
+      <input type="password" id="authPassword" placeholder="Password (min 6 characters)">
+      <button id="authSubmit">Sign in to Verisyn</button>
+      <div class="auth-status" id="authStatus"></div>
+      <div class="auth-switch">
+        <span id="authSwitchText">Don't have an account?</span>
+        <a href="#" id="authSwitchLink">Sign up with Verisyn</a>
+      </div>
     </div>
+    <a href="#" id="togglePasswordFields" class="auth-toggle-link">Use email + password</a>
   </div>
 </div>
 
@@ -623,18 +649,56 @@ let authMode = 'login';
 function openAuthModal(mode){
   authMode = mode || 'login';
   document.getElementById('authOverlay').classList.add('show');
-  document.getElementById('authTitle').textContent = authMode === 'login' ? 'Log in' : 'Create account';
-  document.getElementById('authSubmit').textContent = authMode === 'login' ? 'Log in' : 'Sign up';
+  document.getElementById('authTitle').textContent = authMode === 'login' ? 'Sign in to Verisyn' : 'Sign up with Verisyn';
+  document.getElementById('authSubmit').textContent = authMode === 'login' ? 'Sign in to Verisyn' : 'Sign up with Verisyn';
   document.getElementById('authSwitchText').textContent = authMode === 'login' ? "Don't have an account?" : 'Already have an account?';
-  document.getElementById('authSwitchLink').textContent = authMode === 'login' ? 'Sign up' : 'Log in';
+  document.getElementById('authSwitchLink').textContent = authMode === 'login' ? 'Sign up with Verisyn' : 'Sign in to Verisyn';
   document.getElementById('authStatus').textContent = '';
   document.getElementById('authStatus').className = 'auth-status';
+  document.getElementById('magicStatus').textContent = '';
+  document.getElementById('magicStatus').className = 'auth-status';
 }
 function closeAuthModal(){ document.getElementById('authOverlay').classList.remove('show'); }
 
 document.getElementById('authClose').addEventListener('click', closeAuthModal);
 document.getElementById('authOverlay').addEventListener('click', (e)=>{ if(e.target.id==='authOverlay') closeAuthModal(); });
 document.getElementById('authSwitchLink').addEventListener('click', (e)=>{ e.preventDefault(); openAuthModal(authMode==='login' ? 'signup' : 'login'); });
+
+document.getElementById('togglePasswordFields').addEventListener('click', (e)=>{
+  e.preventDefault();
+  const fields = document.getElementById('passwordFields');
+  const isHidden = fields.style.display === 'none';
+  fields.style.display = isHidden ? 'block' : 'none';
+  e.target.textContent = isHidden ? 'Hide password sign-in' : 'Use email + password';
+});
+
+document.getElementById('googleAuthBtn').addEventListener('click', ()=>{
+  window.location.href = '/api/google-login';
+});
+
+document.getElementById('magicSubmit').addEventListener('click', async ()=>{
+  const email = document.getElementById('magicEmail').value.trim();
+  const status = document.getElementById('magicStatus');
+  if(!email.includes('@')){ status.textContent = 'Enter a valid email first.'; status.className = 'auth-status'; return; }
+  status.textContent = 'Sending link...'; status.className = 'auth-status';
+  try{
+    const res = await fetch('/api/magic-link', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({email})
+    });
+    const data = await res.json();
+    if(res.ok && data.sent){
+      status.textContent = `✓ Check ${email} for a sign-in link — it expires in 15 minutes.`;
+      status.className = 'auth-status ok';
+    } else {
+      status.textContent = data.error || 'Could not send the link right now.';
+      status.className = 'auth-status';
+    }
+  }catch(e){
+    status.textContent = 'Network error — try again.';
+    status.className = 'auth-status';
+  }
+});
 
 document.getElementById('loginNavBtn').addEventListener('click', async (e)=>{
   e.preventDefault();
@@ -1404,6 +1468,23 @@ document.getElementById('embedBtn').addEventListener('click', ()=>{
   const sharedAddress = params.get('a');
   const sharedChain = params.get('c');
   const isBadge = params.get('badge') === '1';
+
+  if(params.get('authed') === '1'){
+    history.replaceState({}, '', location.pathname + location.hash);
+    showError('✓ Signed in successfully.');
+  }
+  if(params.get('auth_error')){
+    const errMap = {
+      google_not_configured: "Google sign-in isn't set up yet on this site.",
+      google_state_mismatch: 'Sign-in session expired — try again.',
+      google_token_failed: 'Google sign-in failed — try again.',
+      google_no_email: 'Could not get your email from Google.',
+      expired_link: 'That sign-in link has expired — request a new one.',
+      missing_token: 'Invalid sign-in link.'
+    };
+    history.replaceState({}, '', location.pathname + location.hash);
+    showError(errMap[params.get('auth_error')] || 'Sign-in failed — try again.');
+  }
 
   if(isBadge){
     document.body.classList.add('badge-mode');
