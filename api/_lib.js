@@ -59,7 +59,7 @@ export async function getSessionUser(req) {
   if (!email) return null;
   const user = parseUser(await kv.get(`user:${email}`));
   if (!user) return null;
-  return { email, isPro: !!user.isPro };
+  return { email, isPro: !!user.isPro, plan: user.plan || null, isProPlus: user.plan === 'proplus' && !!user.isPro };
 }
 
 export async function getUserRecord(email) {
