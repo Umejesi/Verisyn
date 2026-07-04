@@ -9,7 +9,7 @@ import { kv, hashPassword, verifyPassword, generateToken, setSessionCookie,
 export default async function handler(req, res) {
   if (req.method === 'GET') {
     const user = await getSessionUser(req);
-    res.status(200).json(user ? { loggedIn: true, email: user.email, isPro: user.isPro } : { loggedIn: false });
+    res.status(200).json(user ? { loggedIn: true, email: user.email, isPro: user.isPro, isProPlus: user.isProPlus } : { loggedIn: false });
     return;
   }
 
