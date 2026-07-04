@@ -42,6 +42,10 @@ export default async function handler(req, res) {
   if (action === 'login') {
     const user = await getUserRecord(normalizedEmail);
     if (!user) { res.status(401).json({ error: 'No account found with this email.' }); return; }
+    if (!user.passwordHash) {
+      res.status(401).json({ error: 'This account was created with Google or a magic link — use that instead of a password.' });
+      return;
+    }
     if (!verifyPassword(password, user.passwordHash)) { res.status(401).json({ error: 'Incorrect password.' }); return; }
 
     const token = generateToken();
