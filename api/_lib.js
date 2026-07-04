@@ -89,9 +89,17 @@ export function setShortCookie(res, name, value, maxAgeSeconds) {
 // Requires RESEND_API_KEY env var. Silently no-ops with a console warning if
 // it's not set yet, so local testing doesn't hard-crash before that's configured.
 export async function sendMagicLinkEmail(email, link) {
+  return sendEmail(email, 'Your Verisyn sign-in link',
+    `<p>Click below to sign in to Verisyn:</p>
+     <p><a href="${link}" style="background:#2451FF;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:600;">Sign in to Verisyn</a></p>
+     <p style="color:#888;font-size:13px;">This link expires in 15 minutes. If you didn't request this, you can ignore this email.</p>`);
+}
+
+// Generic email sender used by both magic links and watchlist alerts.
+export async function sendEmail(to, subject, html) {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
-    console.warn('RESEND_API_KEY not set — cannot send magic link email.');
+    console.warn('RESEND_API_KEY not set — cannot send email:', subject);
     return false;
   }
   const res = await fetch('https://api.resend.com/emails', {
@@ -99,11 +107,7 @@ export async function sendMagicLinkEmail(email, link) {
     headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       from: process.env.MAGIC_LINK_FROM || 'Verisyn <onboarding@resend.dev>',
-      to: email,
-      subject: 'Your Verisyn sign-in link',
-      html: `<p>Click below to sign in to Verisyn:</p>
-             <p><a href="${link}" style="background:#2451FF;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:600;">Sign in to Verisyn</a></p>
-             <p style="color:#888;font-size:13px;">This link expires in 15 minutes. If you didn't request this, you can ignore this email.</p>`
+      to, subject, html
     })
   });
   return res.ok;
