@@ -208,6 +208,11 @@
   .pricing-head{text-align:center;margin-bottom:28px;}
   .pricing-head h2{font-size:24px;margin:0 0 8px;}
   .pricing-head p{color:var(--ink-soft);font-size:14px;margin:0;}
+  .plans-3{grid-template-columns:repeat(4,1fr);}
+  .founding-banner{background:var(--warn-soft);border:1px solid var(--warn);color:var(--warn);
+    border-radius:10px;padding:12px 16px;text-align:center;font-size:13.5px;margin-bottom:20px;}
+  .founding-banner b{color:var(--ink);}
+
   .plans{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
   .plan{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:24px;}
   .plan.pro{border:2px solid var(--blue);position:relative;}
@@ -334,7 +339,7 @@
 
   footer{text-align:center;color:var(--ink-faint);font-size:12px;padding:36px 0 60px;line-height:1.7;}
 
-  @media (max-width:520px){ .plans{grid-template-columns:1fr;} h1{font-size:26px;} }
+  @media (max-width:520px){ .plans{grid-template-columns:1fr;} .plans-3{grid-template-columns:1fr;} h1{font-size:26px;} }
 </style>
 </head>
 <body>
@@ -506,9 +511,14 @@
 <div class="container pricing" id="pricing">
   <div class="pricing-head">
     <h2>Simple pricing</h2>
-    <p>Free to try. Upgrade when you're scanning more than a few tokens a day.</p>
+    <p>Free to try. One-time payment, Pro access for life at whatever price you locked in — no recurring charges yet.</p>
   </div>
-  <div class="plans">
+
+  <div class="founding-banner" id="foundingBanner" style="display:none;">
+    🔥 Founding Member pricing: <b id="foundingSpotsLeft">—</b> spots left at $5.99/mo equivalent — locked in for life.
+  </div>
+
+  <div class="plans plans-3">
     <div class="plan">
       <div class="plan-name">Free</div>
       <div class="plan-price">$0</div>
@@ -520,44 +530,71 @@
       </ul>
       <button class="plan-btn" disabled>Current plan</button>
     </div>
+
+    <div class="plan pro" id="foundingPlan" style="display:none;">
+      <div class="plan-tag">Limited — first 200</div>
+      <div class="plan-name">Founding Member</div>
+      <div class="plan-price">₦9,000<span>one-time</span></div>
+      <ul class="plan-feats">
+        <li>Everything in Pro, for life</li>
+        <li>Locked-in founding price</li>
+        <li>Priority on new features</li>
+      </ul>
+      <div class="checkout-box">
+        <button class="plan-btn" id="paystackFoundingBtn">Claim Founding Price</button>
+        <div class="checkout-status" id="checkoutStatusFounding"></div>
+      </div>
+    </div>
+
     <div class="plan pro">
       <div class="plan-tag">Available now</div>
       <div class="plan-name">Pro</div>
-      <div class="plan-price">$12<span>/mo</span></div>
+      <div class="plan-price">₦15,000<span>one-time</span></div>
       <ul class="plan-feats">
         <li>Unlimited scans</li>
         <li>AI explanations</li>
         <li>Wallet analysis</li>
-        <li>New token alerts (coming soon)</li>
+        <li>Whale &amp; holder analysis</li>
         <li>Unlimited watchlists</li>
         <li>Export reports</li>
+        <li>Pro access for life</li>
       </ul>
-
       <div class="checkout-box">
-        <button class="plan-btn" id="paystackBtn">Subscribe with Paystack — ₦15,000/mo</button>
+        <button class="plan-btn" id="paystackBtn">Get Pro — ₦15,000</button>
         <div class="checkout-status" id="checkoutStatus"></div>
       </div>
-
-      <div class="redeem-divider">or</div>
-
-      <div class="redeem-box">
-        <div class="redeem-label">Already have a Pro code?</div>
-        <div class="redeem-row">
-          <input type="text" id="redeemCode" placeholder="Enter code">
-          <button id="redeemBtn">Redeem</button>
-        </div>
-        <div class="redeem-status" id="redeemStatus"></div>
-      </div>
-
-      <div class="redeem-divider">or</div>
-
-      <button class="plan-btn" id="proBtn" style="background:var(--surface-2);color:var(--ink-soft);border:1px solid var(--line);">Not ready — notify me later</button>
-      <div class="waitlist" id="waitlistForm">
-        <input type="email" id="waitlistEmail" placeholder="you@email.com">
-        <button id="waitlistSubmit">Join</button>
-      </div>
-      <div class="waitlist-success" id="waitlistSuccess">You're on the list — we'll email you when checkout goes live.</div>
     </div>
+
+    <div class="plan">
+      <div class="plan-name">Pro — Extended</div>
+      <div class="plan-price">₦135,000<span>one-time</span></div>
+      <ul class="plan-feats">
+        <li>Everything in Pro</li>
+        <li>Same lifetime access</li>
+        <li>For those who want to pay it forward</li>
+      </ul>
+      <div class="checkout-box">
+        <button class="plan-btn" id="paystackExtendedBtn" style="background:var(--surface-2);color:var(--ink-soft);border:1px solid var(--line);">Support at this tier</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="redeem-box" style="margin-top:20px;max-width:400px;">
+    <div class="redeem-label">Already have a Pro code?</div>
+    <div class="redeem-row">
+      <input type="text" id="redeemCode" placeholder="Enter code">
+      <button id="redeemBtn">Redeem</button>
+    </div>
+    <div class="redeem-status" id="redeemStatus"></div>
+  </div>
+
+  <div style="text-align:center;margin-top:16px;">
+    <button class="plan-btn" id="proBtn" style="max-width:280px;background:var(--surface-2);color:var(--ink-soft);border:1px solid var(--line);">Not ready — notify me later</button>
+    <div class="waitlist" id="waitlistForm" style="max-width:280px;margin:10px auto 0;">
+      <input type="email" id="waitlistEmail" placeholder="you@email.com">
+      <button id="waitlistSubmit">Join</button>
+    </div>
+    <div class="waitlist-success" id="waitlistSuccess">You're on the list — we'll email you when checkout goes live.</div>
   </div>
 </div>
 
@@ -921,42 +958,64 @@ document.getElementById('waitlistSubmit').addEventListener('click', ()=>{
   document.getElementById('waitlistSuccess').classList.add('show');
 });
 
-document.getElementById('paystackBtn').addEventListener('click', ()=>{
-  const status = document.getElementById('checkoutStatus');
+function openPaystackCheckout(amountKobo, planTag, statusEl){
   if(!isLoggedIn){
-    status.textContent = 'Log in or create a free account first — Pro attaches to your account so it works on any device.';
-    status.className = 'checkout-status err show';
+    statusEl.textContent = 'Log in or create a free account first — Pro attaches to your account so it works on any device.';
+    statusEl.className = 'checkout-status err show';
     openAuthModal('login');
     return;
   }
-  const email = userEmail;
   if(!window.PaystackPop || PAYSTACK_PUBLIC_KEY.includes('replace_with')){
-    status.textContent = 'Checkout is not fully configured yet — use "Not ready — notify me later" below for now.';
-    status.className = 'checkout-status err show';
+    statusEl.textContent = 'Checkout is not fully configured yet — use "Not ready — notify me later" below for now.';
+    statusEl.className = 'checkout-status err show';
     return;
   }
 
-  status.textContent = 'Opening secure checkout...';
-  status.className = 'checkout-status pending show';
+  statusEl.textContent = 'Opening secure checkout...';
+  statusEl.className = 'checkout-status pending show';
 
   const handler = PaystackPop.setup({
     key: PAYSTACK_PUBLIC_KEY,
-    email: email,
-    amount: PAYSTACK_AMOUNT_KOBO,
+    email: userEmail,
+    amount: amountKobo,
     currency: PAYSTACK_CURRENCY,
-    metadata: { product: 'verisyn' },
+    metadata: { product: 'verisyn', plan: planTag },
     callback: function(response){
-      status.textContent = 'Payment received — unlocking Pro...';
-      status.className = 'checkout-status pending show';
-      pollForProCode(response.reference, status);
+      statusEl.textContent = 'Payment received — unlocking Pro...';
+      statusEl.className = 'checkout-status pending show';
+      pollForProCode(response.reference, statusEl);
     },
     onClose: function(){
-      status.textContent = 'Checkout closed — no charge made.';
-      status.className = 'checkout-status show';
+      statusEl.textContent = 'Checkout closed — no charge made.';
+      statusEl.className = 'checkout-status show';
     }
   });
   handler.openIframe();
+}
+
+document.getElementById('paystackBtn').addEventListener('click', ()=>{
+  openPaystackCheckout(1500000, 'pro', document.getElementById('checkoutStatus'));
 });
+document.getElementById('paystackFoundingBtn').addEventListener('click', ()=>{
+  openPaystackCheckout(900000, 'founding', document.getElementById('checkoutStatusFounding'));
+});
+document.getElementById('paystackExtendedBtn').addEventListener('click', ()=>{
+  const tempStatus = document.createElement('div');
+  openPaystackCheckout(13500000, 'extended', tempStatus);
+});
+
+async function loadFoundingStatus(){
+  try{
+    const res = await fetch('/api/founding-status');
+    const data = await res.json();
+    if(data.remaining > 0){
+      document.getElementById('foundingBanner').style.display = 'block';
+      document.getElementById('foundingPlan').style.display = 'block';
+      document.getElementById('foundingSpotsLeft').textContent = data.remaining;
+    }
+  }catch(e){ /* founding offer just stays hidden if this fails */ }
+}
+loadFoundingStatus();
 
 async function pollForProCode(reference, status, attempt){
   attempt = attempt || 0;
@@ -1484,6 +1543,11 @@ document.getElementById('embedBtn').addEventListener('click', ()=>{
     };
     history.replaceState({}, '', location.pathname + location.hash);
     showError(errMap[params.get('auth_error')] || 'Sign-in failed — try again.');
+  }
+
+  if(params.get('openAuth') === '1'){
+    history.replaceState({}, '', location.pathname + location.hash);
+    openAuthModal('login');
   }
 
   if(isBadge){
