@@ -1,7 +1,7 @@
 {
   "crons": [
     {
-      "path": "/api/cron-watchlist-check",
+      "path": "/api/watchlist",
       "schedule": "0 13 * * *"
     }
   ]

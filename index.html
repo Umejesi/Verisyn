@@ -737,7 +737,7 @@ document.getElementById('magicSubmit').addEventListener('click', async ()=>{
   if(!email.includes('@')){ status.textContent = 'Enter a valid email first.'; status.className = 'auth-status'; return; }
   status.textContent = 'Sending link...'; status.className = 'auth-status';
   try{
-    const res = await fetch('/api/magic-link', {
+    const res = await fetch('/api/magic', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({email})
     });
@@ -943,9 +943,9 @@ Score: ${analysis.score}/100 (${analysis.tier})
 Flags: ${analysis.flags.map(f=>`${f.title}: ${f.desc}`).join('; ')}`;
 
   try{
-    const res = await fetch('/api/ai-chat', {
+    const res = await fetch('/api/ai', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ question, context })
+      body: JSON.stringify({ mode:'chat', question, context })
     });
     const data = await res.json();
     answerEl.textContent = data.answer || data.error || 'Could not get an answer right now.';
@@ -1076,7 +1076,7 @@ document.getElementById('paystackFoundingBtn').addEventListener('click', ()=>{
 
 async function loadFoundingStatus(){
   try{
-    const res = await fetch('/api/founding-status');
+    const res = await fetch('/api/billing');
     const data = await res.json();
     if(data.remaining > 0){
       document.getElementById('foundingBanner').style.display = 'block';
@@ -1098,7 +1098,7 @@ async function pollForProCode(reference, status, attempt){
     const res = await fetch(`/api/paystack-status?reference=${encodeURIComponent(reference)}`);
     const data = await res.json();
     if(data.ready && data.code){
-      const redeemRes = await fetch('/api/redeem', {
+      const redeemRes = await fetch('/api/billing', {
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({code: data.code})
       });
@@ -1132,7 +1132,7 @@ document.getElementById('redeemBtn').addEventListener('click', async ()=>{
   status.textContent = 'Checking...';
   status.className = 'redeem-status show';
   try{
-    const res = await fetch('/api/redeem', {
+    const res = await fetch('/api/billing', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({code})
@@ -1402,7 +1402,7 @@ ${flagSummary}
 
 Write ONLY the verdict paragraph (2-3 sentences, no preamble, no markdown). Focus on what matters most for a decision.`;
   try{
-    const res = await fetch('/api/ai-verdict', {
+    const res = await fetch('/api/ai', {
       method:"POST", headers:{"Content-Type":"application/json"},
       body: JSON.stringify({ prompt })
     });

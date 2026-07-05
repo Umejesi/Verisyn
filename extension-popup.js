@@ -115,7 +115,7 @@ ${flagSummary}
 
 Write ONLY the verdict paragraph (2-3 sentences, no preamble, no markdown). Focus on what matters most for a decision.`;
   try{
-    const res = await fetch(`${SITE_URL}/api/ai-verdict`, {
+    const res = await fetch(`${SITE_URL}/api/ai`, {
       method:'POST', credentials:'include', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ prompt })
     });
