@@ -3,10 +3,12 @@
 // We exchange it for the user's email, then log them in the same way as
 // any other passwordless flow.
 
-import { kv, generateToken, setSessionCookie, getOrCreateUser, parseCookies } from './_lib.js';
+import { kv, generateToken, setSessionCookie, getOrCreateUser, parseCookies, requireSiteUrl } from './_lib.js';
 
 export default async function handler(req, res) {
-  const siteUrl = process.env.SITE_URL || `https://${req.headers.host}`;
+  let siteUrl;
+  try { siteUrl = requireSiteUrl(); }
+  catch { res.status(500).json({ error: 'Server misconfigured — SITE_URL not set.' }); return; }
   const { code, state } = req.query || {};
 
   const cookieState = parseCookies(req)['verisyn_oauth_state'];
