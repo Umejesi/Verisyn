@@ -4,11 +4,18 @@
 //
 // POST { email } -> sends the sign-in link (was api/magic-link.js)
 // GET ?token=...  -> verifies it and logs the user in (was api/magic-verify.js)
+//
+// Security: rate limited per email AND per IP so this can't be used to spam
+// a stranger's inbox with sign-in links or burn through your Resend quota.
+// SITE_URL must be a real env var (never trusts the request's Host header).
 
-import { kv, generateToken, setSessionCookie, getOrCreateUser, sendMagicLinkEmail } from './_lib.js';
+import { kv, generateToken, setSessionCookie, getOrCreateUser, sendMagicLinkEmail,
+         checkRateLimit, getClientIp, requireSiteUrl } from './_lib.js';
 
 export default async function handler(req, res) {
-  const siteUrl = process.env.SITE_URL || `https://${req.headers.host}`;
+  let siteUrl;
+  try { siteUrl = requireSiteUrl(); }
+  catch { res.status(500).json({ error: 'Server misconfigured — SITE_URL not set.' }); return; }
 
   if (req.method === 'GET') {
     const token = req.query?.token;
@@ -33,6 +40,16 @@ export default async function handler(req, res) {
   const { email } = req.body || {};
   if (!email || !email.includes('@')) { res.status(400).json({ error: 'A valid email is required.' }); return; }
   const normalizedEmail = email.trim().toLowerCase();
+  const ip = getClientIp(req);
+
+  // Cap per-email requests (stops someone spamming a stranger's inbox) and
+  // per-IP requests (stops one person mass-requesting links for many emails).
+  const okEmail = await checkRateLimit(`ratelimit:magic:email:${normalizedEmail}`, 3, 15 * 60);
+  const okIp = await checkRateLimit(`ratelimit:magic:ip:${ip}`, 10, 60 * 60);
+  if (!okEmail || !okIp) {
+    res.status(429).json({ error: 'Too many sign-in link requests. Try again in a few minutes.' });
+    return;
+  }
 
   const token = generateToken();
   await kv.set(`magic:${token}`, normalizedEmail, { ex: 60 * 15 }); // 15 minute expiry
