@@ -116,3 +116,27 @@ export async function sendEmail(to, subject, html) {
 export function todayKey() {
   return new Date().toISOString().slice(0, 10); // YYYY-MM-DD, used so quotas reset daily
 }
+
+// Returns the real client IP behind Vercel's proxy. Used for rate limiting.
+export function getClientIp(req) {
+  const forwarded = req.headers['x-forwarded-for'];
+  if (forwarded) return forwarded.split(',')[0].trim();
+  return req.socket?.remoteAddress || 'unknown';
+}
+
+// Generic fixed-window rate limiter. Returns true if the action is allowed,
+// false if the limit has been hit. Each call increments the counter.
+export async function checkRateLimit(key, limit, windowSeconds) {
+  const count = await kv.incr(key);
+  if (count === 1) await kv.expire(key, windowSeconds);
+  return count <= limit;
+}
+
+// SITE_URL must be set explicitly rather than falling back to the request's
+// Host header — that header is client-controlled and shouldn't be trusted
+// for building redirect URLs or links sent in emails.
+export function requireSiteUrl() {
+  const url = process.env.SITE_URL;
+  if (!url) throw new Error('SITE_URL environment variable is not set.');
+  return url;
+}
