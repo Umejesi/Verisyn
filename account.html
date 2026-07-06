@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Account — Verisyn</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%232451FF'/%3E%3Crect x='22' y='47' width='56' height='6' rx='3' fill='white'/%3E%3C/svg%3E">
+<style>
+  :root{
+    --canvas:#0B0E13; --surface:#12161D; --surface-2:#181D26; --ink:#EDEFF2;
+    --ink-soft:#9BA3AE; --ink-faint:#5E6670; --line:#232933; --blue:#4C7CFF;
+    --blue-soft:#182238; --safe:#22C57D; --safe-soft:#10241C;
+    --warn:#F0B429; --danger:#F4555C; --danger-soft:#2B171B;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;background:var(--canvas);color:var(--ink);font-family:'Inter',sans-serif;}
+  h1,h2{font-family:'Space Grotesk',sans-serif;}
+  a{color:inherit;}
+  .container{max-width:520px;margin:0 auto;padding:0 20px;}
+
+  header{border-bottom:1px solid var(--line);background:var(--surface);}
+  .headbar{display:flex;align-items:center;justify-content:space-between;padding:14px 0;}
+  .logo{display:flex;align-items:center;gap:9px;font-weight:700;font-size:18px;text-decoration:none;color:var(--ink);}
+  .logo-mark{width:22px;height:22px;border-radius:6px;background:var(--blue);position:relative;flex-shrink:0;}
+  .logo-mark::after{content:'';position:absolute;left:4px;right:4px;height:2px;background:#fff;top:50%;
+    transform:translateY(-50%);border-radius:2px;}
+  .nav-link{font-size:13.5px;color:var(--ink-soft);text-decoration:none;}
+
+  .hero{padding:40px 0 20px;}
+  h1{font-size:26px;margin:0 0 6px;}
+  .sub{color:var(--ink-soft);font-size:14px;}
+
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:16px;}
+  .row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px;}
+  .row:last-child{border-bottom:none;}
+  .row .label{color:var(--ink-soft);}
+  .row .value{font-weight:600;}
+  .plan-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:12.5px;font-weight:700;}
+  .plan-badge.free{background:var(--surface-2);color:var(--ink-soft);}
+  .plan-badge.pro{background:var(--blue-soft);color:var(--blue);}
+  .plan-badge.founding{background:var(--warn);color:#2A2213;}
+  .plan-badge.proplus{background:var(--safe-soft);color:var(--safe);}
+
+  .btn{width:100%;padding:12px;border-radius:8px;font-weight:600;font-size:14px;border:none;cursor:pointer;margin-top:6px;}
+  .btn-danger{background:var(--danger-soft);color:var(--danger);border:1px solid var(--danger);}
+  .btn-upgrade{background:var(--blue);color:#fff;}
+  .status-msg{font-size:13px;margin-top:10px;min-height:16px;}
+  .status-msg.ok{color:var(--safe);}
+  .status-msg.err{color:var(--danger);}
+
+  .login-prompt{text-align:center;padding:60px 20px;color:var(--ink-soft);}
+  .login-prompt a{color:var(--blue);font-weight:600;text-decoration:none;}
+
+  .confirm-box{display:none;background:var(--danger-soft);border:1px solid var(--danger);border-radius:10px;padding:14px;margin-top:12px;font-size:13px;color:var(--ink);}
+  .confirm-box.show{display:block;}
+  .confirm-row{display:flex;gap:8px;margin-top:10px;}
+  .confirm-row button{flex:1;padding:9px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;border:none;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container headbar">
+    <a class="logo" href="/"><div class="logo-mark"></div>Verisyn</a>
+    <a class="nav-link" href="/">← Back to scanner</a>
+  </div>
+</header>
+
+<div class="container hero">
+  <h1>My Account</h1>
+  <p class="sub">Manage your plan and subscription.</p>
+</div>
+
+<div class="container" id="content">
+  <div class="login-prompt" id="loginPrompt">
+    Log in to view your account.<br><br>
+    <a href="/?openAuth=1">Sign in to Verisyn →</a>
+  </div>
+
+  <div id="accountDetails" style="display:none;">
+    <div class="card">
+      <div class="row"><span class="label">Email</span><span class="value" id="accEmail">—</span></div>
+      <div class="row"><span class="label">Plan</span><span class="value"><span class="plan-badge" id="planBadge">—</span></span></div>
+      <div class="row" id="billingRow" style="display:none;"><span class="label">Billing</span><span class="value" id="billingValue">—</span></div>
+    </div>
+
+    <div class="card" id="upgradeCard" style="display:none;">
+      <p style="font-size:13.5px;color:var(--ink-soft);margin-bottom:10px;">You're on the Free plan. Upgrade for unlimited scans, wallet analysis, and real alerts.</p>
+      <button class="btn btn-upgrade" onclick="location.href='/#pricing'">View plans</button>
+    </div>
+
+    <div class="card" id="cancelCard" style="display:none;">
+      <p style="font-size:13.5px;color:var(--ink-soft);margin-bottom:6px;">Need to cancel? Your access continues until the end of the current billing period.</p>
+      <button class="btn btn-danger" id="cancelBtn">Cancel subscription</button>
+      <div class="confirm-box" id="confirmBox">
+        Are you sure? This will stop future billing and downgrade your account once it takes effect.
+        <div class="confirm-row">
+          <button id="confirmYes" style="background:var(--danger);color:#fff;">Yes, cancel</button>
+          <button id="confirmNo" style="background:var(--surface-2);color:var(--ink-soft);">Never mind</button>
+        </div>
+      </div>
+      <div class="status-msg" id="cancelStatus"></div>
+    </div>
+
+    <div class="card" id="manualCard" style="display:none;">
+      <p style="font-size:13.5px;color:var(--ink-soft);">Your Pro access was activated with a redeemed code, not a Paystack subscription — there's nothing to cancel here. Contact support if you have questions.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const PLAN_LABELS = {
+  null: { text: 'Free', cls: 'free' },
+  pro: { text: '⭐ Pro', cls: 'pro' },
+  founding: { text: '🔥 Founding Member', cls: 'founding' },
+  proplus: { text: '⭐ Pro Plus', cls: 'proplus' }
+};
+
+async function loadAccount(){
+  try{
+    const res = await fetch('/api/auth');
+    const data = await res.json();
+    if(!data.loggedIn){
+      document.getElementById('loginPrompt').style.display = 'block';
+      document.getElementById('accountDetails').style.display = 'none';
+      return;
+    }
+    document.getElementById('loginPrompt').style.display = 'none';
+    document.getElementById('accountDetails').style.display = 'block';
+    document.getElementById('accEmail').textContent = data.email;
+
+    const planInfo = PLAN_LABELS[data.isPro ? (data.plan || 'pro') : null];
+    const badge = document.getElementById('planBadge');
+    badge.textContent = planInfo.text;
+    badge.className = 'plan-badge ' + planInfo.cls;
+
+    if(!data.isPro){
+      document.getElementById('upgradeCard').style.display = 'block';
+      return;
+    }
+
+    if(data.subscriptionCode){
+      document.getElementById('billingRow').style.display = 'flex';
+      document.getElementById('billingValue').textContent = 'Auto-renewing via Paystack';
+      document.getElementById('cancelCard').style.display = 'block';
+    } else {
+      document.getElementById('manualCard').style.display = 'block';
+    }
+  }catch(e){
+    document.getElementById('loginPrompt').style.display = 'block';
+  }
+}
+
+document.getElementById('cancelBtn').addEventListener('click', ()=>{
+  document.getElementById('confirmBox').classList.add('show');
+});
+document.getElementById('confirmNo').addEventListener('click', ()=>{
+  document.getElementById('confirmBox').classList.remove('show');
+});
+document.getElementById('confirmYes').addEventListener('click', async ()=>{
+  const status = document.getElementById('cancelStatus');
+  status.textContent = 'Cancelling...';
+  status.className = 'status-msg';
+  try{
+    const res = await fetch('/api/auth', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'cancel_subscription' })
+    });
+    const data = await res.json();
+    if(res.ok){
+      status.textContent = data.message;
+      status.className = 'status-msg ok';
+      document.getElementById('confirmBox').classList.remove('show');
+      setTimeout(loadAccount, 1500);
+    } else {
+      status.textContent = data.error || 'Cancellation failed.';
+      status.className = 'status-msg err';
+    }
+  }catch(e){
+    status.textContent = 'Network error — try again.';
+    status.className = 'status-msg err';
+  }
+});
+
+loadAccount();
+</script>
+</body>
+</html>
