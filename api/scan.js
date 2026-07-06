@@ -5,14 +5,19 @@
 // resets on refresh.
 //
 // Guest (not logged in): 3 scans/day, tracked by a random ID the browser
-//   generates once and stores locally (imperfect — clearing storage resets
-//   it — but that's a reasonable tradeoff for a free anonymous tier).
+//   generates once and stores locally. On its own this is bypassable by
+//   clearing browser storage, so it's backed by a second, more generous
+//   per-IP limit too — clearing storage alone no longer resets the count,
+//   since the IP-based counter persists independently. A determined person
+//   could still get a new IP (VPN, mobile network), but that's a much
+//   higher bar than clearing localStorage.
 // Registered (logged in, not Pro): 5 scans/day, tracked against their account.
 // Pro: unlimited, and the only tier allowed to use wallet analysis.
 
-import { kv, getSessionUser, todayKey } from './_lib.js';
+import { kv, getSessionUser, todayKey, getClientIp } from './_lib.js';
 
 const GUEST_LIMIT = 3;
+const GUEST_IP_LIMIT = 12; // higher than GUEST_LIMIT to allow for shared/office IPs
 const REGISTERED_LIMIT = 5;
 
 export default async function handler(req, res) {
@@ -23,7 +28,7 @@ export default async function handler(req, res) {
   if (!chain) { res.status(400).json({ error: 'Missing chain.' }); return; }
 
   const user = await getSessionUser(req);
-  let tier, quotaKey, limit;
+  let tier, quotaKey, limit, ipQuotaKey;
 
   if (user && user.isPro) {
     tier = 'pro'; limit = Infinity;
@@ -34,6 +39,7 @@ export default async function handler(req, res) {
     if (!guestId) { res.status(400).json({ error: 'Missing guest id.' }); return; }
     tier = 'guest'; limit = GUEST_LIMIT;
     quotaKey = `quota:guest:${guestId}:${todayKey()}`;
+    ipQuotaKey = `quota:guestip:${getClientIp(req)}:${todayKey()}`;
   }
 
   if (mode === 'wallet' && tier !== 'pro') {
@@ -43,7 +49,8 @@ export default async function handler(req, res) {
 
   if (quotaKey) {
     const used = Number(await kv.get(quotaKey) || 0);
-    if (used >= limit) {
+    const ipUsed = ipQuotaKey ? Number(await kv.get(ipQuotaKey) || 0) : 0;
+    if (used >= limit || ipUsed >= GUEST_IP_LIMIT) {
       res.status(429).json({
         error: tier === 'guest'
           ? 'Guest scan limit reached for today. Log in for more free scans.'
@@ -81,6 +88,10 @@ export default async function handler(req, res) {
       const newCount = await kv.incr(quotaKey);
       if (newCount === 1) await kv.expire(quotaKey, 60 * 60 * 24);
       remaining = Math.max(0, limit - newCount);
+    }
+    if (ipQuotaKey) {
+      const newIpCount = await kv.incr(ipQuotaKey);
+      if (newIpCount === 1) await kv.expire(ipQuotaKey, 60 * 60 * 24);
     }
 
     res.status(200).json({ security, market, tier, remaining });
