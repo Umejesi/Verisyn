@@ -17,11 +17,13 @@
 //      SITE_URL = https://<your-vercel-domain>  (if not already set from Paystack/magic-link setup)
 
 import crypto from 'crypto';
-import { setShortCookie } from './_lib.js';
+import { setShortCookie, requireSiteUrl } from './_lib.js';
 
 export default async function handler(req, res) {
   const clientId = process.env.GOOGLE_CLIENT_ID;
-  const siteUrl = process.env.SITE_URL || `https://${req.headers.host}`;
+  let siteUrl;
+  try { siteUrl = requireSiteUrl(); }
+  catch { res.status(500).json({ error: 'Server misconfigured — SITE_URL not set.' }); return; }
 
   if (!clientId) {
     res.redirect(302, `${siteUrl}/?auth_error=google_not_configured`);
