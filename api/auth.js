@@ -1,7 +1,9 @@
 // api/auth.js
-// Handles account creation, login, logout, and "am I logged in" checks.
-// GET  -> returns current session state: {loggedIn, email, isPro}
-// POST -> body.action = 'signup' | 'login' | 'logout'
+// Handles account creation, login, logout, "am I logged in" checks, and
+// subscription cancellation (folded in here rather than a new file, to stay
+// well under Vercel's Hobby plan limit of 12 serverless functions).
+// GET  -> returns current session state: {loggedIn, email, isPro, plan, subscriptionCode}
+// POST -> body.action = 'signup' | 'login' | 'logout' | 'cancel_subscription'
 
 import { kv, hashPassword, verifyPassword, generateToken, setSessionCookie,
          clearSessionCookie, getSessionUser, getUserRecord, saveUserRecord,
@@ -10,7 +12,12 @@ import { kv, hashPassword, verifyPassword, generateToken, setSessionCookie,
 export default async function handler(req, res) {
   if (req.method === 'GET') {
     const user = await getSessionUser(req);
-    res.status(200).json(user ? { loggedIn: true, email: user.email, isPro: user.isPro, isProPlus: user.isProPlus } : { loggedIn: false });
+    if (!user) { res.status(200).json({ loggedIn: false }); return; }
+    const record = await getUserRecord(user.email);
+    res.status(200).json({
+      loggedIn: true, email: user.email, isPro: user.isPro, isProPlus: user.isProPlus,
+      plan: record?.plan || null, subscriptionCode: record?.subscriptionCode || null
+    });
     return;
   }
 
@@ -22,6 +29,39 @@ export default async function handler(req, res) {
   if (action === 'logout') {
     clearSessionCookie(res);
     res.status(200).json({ ok: true });
+    return;
+  }
+
+  if (action === 'cancel_subscription') {
+    const user = await getSessionUser(req);
+    if (!user) { res.status(401).json({ error: 'Log in first.' }); return; }
+    const record = await getUserRecord(user.email);
+    if (!record?.subscriptionCode) {
+      res.status(400).json({ error: 'No active Paystack subscription found on this account.' });
+      return;
+    }
+
+    try {
+      const fetchRes = await fetch(`https://api.paystack.co/subscription/${record.subscriptionCode}`, {
+        headers: { Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}` }
+      });
+      const fetchData = await fetchRes.json();
+      const emailToken = fetchData.data?.email_token;
+      if (!emailToken) { res.status(500).json({ error: 'Could not verify subscription with Paystack.' }); return; }
+
+      const disableRes = await fetch('https://api.paystack.co/subscription/disable', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: record.subscriptionCode, token: emailToken })
+      });
+      const disableData = await disableRes.json();
+      if (!disableData.status) { res.status(500).json({ error: disableData.message || 'Cancellation failed.' }); return; }
+
+      res.status(200).json({ ok: true, message: 'Subscription cancelled. This can take a few minutes to fully reflect on your account.' });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Cancellation failed. Try again shortly.' });
+    }
     return;
   }
 
