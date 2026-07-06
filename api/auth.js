@@ -4,7 +4,8 @@
 // POST -> body.action = 'signup' | 'login' | 'logout'
 
 import { kv, hashPassword, verifyPassword, generateToken, setSessionCookie,
-         clearSessionCookie, getSessionUser, getUserRecord, saveUserRecord } from './_lib.js';
+         clearSessionCookie, getSessionUser, getUserRecord, saveUserRecord,
+         checkRateLimit, getClientIp } from './_lib.js';
 
 export default async function handler(req, res) {
   if (req.method === 'GET') {
@@ -16,6 +17,7 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') { res.status(405).end(); return; }
 
   const { action, email, password } = req.body || {};
+  const ip = getClientIp(req);
 
   if (action === 'logout') {
     clearSessionCookie(res);
@@ -28,6 +30,10 @@ export default async function handler(req, res) {
   const normalizedEmail = email.trim().toLowerCase();
 
   if (action === 'signup') {
+    // Cap new account creation per IP — slows down mass fake-account creation.
+    const okIp = await checkRateLimit(`ratelimit:signup:ip:${ip}`, 8, 60 * 60);
+    if (!okIp) { res.status(429).json({ error: 'Too many accounts created from this network recently. Try again later.' }); return; }
+
     const existing = await getUserRecord(normalizedEmail);
     if (existing) { res.status(409).json({ error: 'An account with this email already exists — try logging in.' }); return; }
 
@@ -40,6 +46,12 @@ export default async function handler(req, res) {
   }
 
   if (action === 'login') {
+    // Cap login attempts by IP and by the specific email being targeted —
+    // this is what stops password brute-forcing.
+    const okIp = await checkRateLimit(`ratelimit:login:ip:${ip}`, 20, 15 * 60);
+    const okEmail = await checkRateLimit(`ratelimit:login:email:${normalizedEmail}`, 8, 15 * 60);
+    if (!okIp || !okEmail) { res.status(429).json({ error: 'Too many login attempts. Try again in a few minutes.' }); return; }
+
     const user = await getUserRecord(normalizedEmail);
     if (!user) { res.status(401).json({ error: 'No account found with this email.' }); return; }
     if (!user.passwordHash) {
