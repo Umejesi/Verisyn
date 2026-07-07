@@ -7,7 +7,7 @@
 
 import { kv, hashPassword, verifyPassword, generateToken, setSessionCookie,
          clearSessionCookie, getSessionUser, getUserRecord, saveUserRecord,
-         checkRateLimit, getClientIp } from './_lib.js';
+         checkRateLimit, getClientIp, sendEmail } from './_lib.js';
 
 export default async function handler(req, res) {
   if (req.method === 'GET') {
@@ -28,6 +28,27 @@ export default async function handler(req, res) {
 
   if (action === 'logout') {
     clearSessionCookie(res);
+    res.status(200).json({ ok: true });
+    return;
+  }
+
+  if (action === 'priority_support') {
+    const user = await getSessionUser(req);
+    if (!user || !user.isProPlus) { res.status(403).json({ error: 'Priority support is a Pro+ feature.' }); return; }
+
+    const okRate = await checkRateLimit(`ratelimit:support:${user.email}`, 5, 60 * 60);
+    if (!okRate) { res.status(429).json({ error: 'Too many messages sent recently. Try again later.' }); return; }
+
+    const { message } = req.body || {};
+    if (!message || message.trim().length < 5) { res.status(400).json({ error: 'Please write a message first.' }); return; }
+
+    const supportEmail = process.env.SUPPORT_EMAIL;
+    if (!supportEmail) { res.status(500).json({ error: 'Support inbox not configured yet.' }); return; }
+
+    const sent = await sendEmail(supportEmail, `[Pro+ Priority] Support message from ${user.email}`,
+      `<p><b>From:</b> ${user.email} (Pro+ subscriber)</p><p>${message.replace(/</g,'&lt;')}</p>`);
+    if (!sent) { res.status(500).json({ error: 'Could not send your message right now. Try again shortly.' }); return; }
+
     res.status(200).json({ ok: true });
     return;
   }
