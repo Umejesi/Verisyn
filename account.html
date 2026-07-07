@@ -107,6 +107,14 @@
     <div class="card" id="manualCard" style="display:none;">
       <p style="font-size:13.5px;color:var(--ink-soft);">Your Pro access was activated with a redeemed code, not a Paystack subscription — there's nothing to cancel here. Contact support if you have questions.</p>
     </div>
+
+    <div class="card" id="supportCard" style="display:none;">
+      <div class="row" style="border:none;padding-bottom:10px;"><span class="value">⭐ Priority Support</span></div>
+      <p style="font-size:13px;color:var(--ink-soft);margin-bottom:10px;">Message goes straight to us, flagged as priority.</p>
+      <textarea id="supportMessage" placeholder="What do you need help with?" style="width:100%;min-height:80px;background:var(--surface-2);border:1px solid var(--line);border-radius:8px;color:var(--ink);padding:10px;font-family:inherit;font-size:13.5px;resize:vertical;"></textarea>
+      <button class="btn btn-upgrade" id="supportSendBtn" style="margin-top:8px;">Send message</button>
+      <div class="status-msg" id="supportStatus"></div>
+    </div>
   </div>
 </div>
 
@@ -139,6 +147,10 @@ async function loadAccount(){
     if(!data.isPro){
       document.getElementById('upgradeCard').style.display = 'block';
       return;
+    }
+
+    if(data.isProPlus){
+      document.getElementById('supportCard').style.display = 'block';
     }
 
     if(data.subscriptionCode){
@@ -185,6 +197,31 @@ document.getElementById('confirmYes').addEventListener('click', async ()=>{
 });
 
 loadAccount();
+
+document.getElementById('supportSendBtn').addEventListener('click', async ()=>{
+  const message = document.getElementById('supportMessage').value.trim();
+  const status = document.getElementById('supportStatus');
+  if(!message){ status.textContent = 'Write a message first.'; status.className = 'status-msg err'; return; }
+  status.textContent = 'Sending...'; status.className = 'status-msg';
+  try{
+    const res = await fetch('/api/auth', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'priority_support', message })
+    });
+    const data = await res.json();
+    if(res.ok){
+      status.textContent = "✓ Sent — we'll get back to you soon.";
+      status.className = 'status-msg ok';
+      document.getElementById('supportMessage').value = '';
+    } else {
+      status.textContent = data.error || 'Could not send.';
+      status.className = 'status-msg err';
+    }
+  }catch(e){
+    status.textContent = 'Network error — try again.';
+    status.className = 'status-msg err';
+  }
+});
 </script>
 </body>
 </html>
