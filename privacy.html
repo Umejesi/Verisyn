@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Privacy Policy — Verisyn</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%232451FF'/%3E%3Crect x='22' y='47' width='56' height='6' rx='3' fill='white'/%3E%3C/svg%3E">
+<style>
+  :root{
+    --canvas:#0B0E13; --surface:#12161D; --ink:#EDEFF2; --ink-soft:#9BA3AE;
+    --ink-faint:#5E6670; --line:#232933; --blue:#4C7CFF;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;background:var(--canvas);color:var(--ink);font-family:'Inter',sans-serif;line-height:1.6;}
+  h1,h2{font-family:'Space Grotesk',sans-serif;}
+  a{color:var(--blue);}
+  .container{max-width:680px;margin:0 auto;padding:0 20px;}
+
+  header{border-bottom:1px solid var(--line);background:var(--surface);}
+  .headbar{display:flex;align-items:center;gap:9px;padding:14px 0;text-decoration:none;color:var(--ink);font-weight:700;font-size:18px;}
+  .logo-mark{width:22px;height:22px;border-radius:6px;background:var(--blue);position:relative;flex-shrink:0;}
+  .logo-mark::after{content:'';position:absolute;left:4px;right:4px;height:2px;background:#fff;top:50%;transform:translateY(-50%);border-radius:2px;}
+
+  .hero{padding:40px 0 10px;}
+  h1{font-size:28px;margin:0 0 6px;}
+  .updated{color:var(--ink-faint);font-size:13px;margin-bottom:30px;}
+
+  h2{font-size:18px;margin:32px 0 10px;}
+  p, li{color:var(--ink-soft);font-size:14.5px;}
+  ul{padding-left:20px;}
+  .contact-box{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;margin-top:30px;}
+
+  footer{text-align:center;color:var(--ink-faint);font-size:12px;padding:40px 0 60px;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <a class="headbar" href="/"><div class="logo-mark"></div>Verisyn</a>
+  </div>
+</header>
+
+<div class="container hero">
+  <h1>Privacy Policy</h1>
+  <p class="updated">Last updated: July 2026</p>
+
+  <p>Verisyn ("we", "us") provides a token and wallet safety scanner via our website, Telegram bot, and browser extension. This page explains what data we collect, why, and how it's handled.</p>
+
+  <h2>What we collect</h2>
+  <ul>
+    <li><b>Account info:</b> if you create an account, we store your email address and a securely hashed password (we never store your actual password). If you sign in with Google, we store the email address Google provides.</li>
+    <li><b>Scan activity:</b> contract addresses you scan, and — if you use the watchlist feature — the addresses you save, so we can check them and alert you to changes.</li>
+    <li><b>Payment info:</b> we do not process or store your card details. Payments are handled entirely by Paystack; we only receive confirmation that a payment succeeded and the plan you subscribed to.</li>
+    <li><b>Technical data:</b> your IP address is used briefly to enforce fair-use scan limits and prevent abuse. We do not sell or share this data.</li>
+    <li><b>Cookies:</b> a single session cookie to keep you signed in. No advertising or tracking cookies are used.</li>
+  </ul>
+
+  <h2>Third-party services we use</h2>
+  <p>Verisyn relies on the following services to function. Data relevant to your request (e.g. a contract address you scan) is sent to these providers as part of normal operation:</p>
+  <ul>
+    <li><b>GoPlus Security & DexScreener</b> — contract and market data (no personal data sent)</li>
+    <li><b>Google</b> — Sign-In authentication, and Gemini AI for generating plain-English scan explanations</li>
+    <li><b>Etherscan</b> — blockchain transaction history for Pro+ features</li>
+    <li><b>Paystack</b> — payment processing</li>
+    <li><b>Resend</b> — transactional emails (sign-in links, watchlist alerts)</li>
+    <li><b>Upstash</b> — our database, hosting account and scan-related data</li>
+  </ul>
+
+  <h2>How we use your data</h2>
+  <ul>
+    <li>To provide the scanning, watchlist, and alert features you use</li>
+    <li>To enforce free-tier limits fairly</li>
+    <li>To send you emails you've requested (sign-in links, watchlist alerts, support replies)</li>
+    <li>To prevent abuse (rate limiting, fraud prevention)</li>
+  </ul>
+  <p>We do not sell your data to advertisers or third parties.</p>
+
+  <h2>Your rights</h2>
+  <p>You can request access to, correction of, or deletion of your account data at any time by emailing us (below). We'll act on deletion requests within a reasonable time.</p>
+
+  <h2>Children's privacy</h2>
+  <p>Verisyn is not directed at, and should not be used by, anyone under 18.</p>
+
+  <h2>Changes to this policy</h2>
+  <p>If this policy changes meaningfully, we'll update the date at the top of this page.</p>
+
+  <div class="contact-box">
+    <b>Questions or requests?</b><br>
+    Email us and we'll get back to you.
+  </div>
+</div>
+
+<footer>
+  <a href="/">← Back to Verisyn</a>
+</footer>
+</body>
+</html>
