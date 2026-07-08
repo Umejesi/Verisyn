@@ -266,6 +266,8 @@
   .waitlist-success{display:none;color:var(--safe);font-size:13px;font-weight:600;margin-top:12px;}
   .waitlist-success.show{display:block;}
 
+  .chain-lock{font-size:10px;opacity:0.7;}
+
   .mode-row{display:flex;gap:8px;margin-bottom:12px;}
   .mode-btn{flex:1;background:var(--surface-2);border:1.5px solid var(--line);color:var(--ink-soft);
     border-radius:8px;padding:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;}
@@ -448,6 +450,9 @@
       <div class="chain-chip" data-chain="56"><span class="dot" style="background:#F0B90B"></span>BSC</div>
       <div class="chain-chip" data-chain="8453"><span class="dot" style="background:#0052FF"></span>Base</div>
       <div class="chain-chip" data-chain="42161"><span class="dot" style="background:#28A0F0"></span>Arbitrum</div>
+      <div class="chain-chip pro-chain" data-chain="137"><span class="dot" style="background:#8247E5"></span>Polygon <span class="chain-lock">🔒</span></div>
+      <div class="chain-chip pro-chain" data-chain="43114"><span class="dot" style="background:#E84142"></span>Avalanche <span class="chain-lock">🔒</span></div>
+      <div class="chain-chip pro-chain" data-chain="10"><span class="dot" style="background:#FF0420"></span>Optimism <span class="chain-lock">🔒</span></div>
     </div>
     <div class="scan-row">
       <input type="text" id="address" placeholder="0x... contract address">
@@ -508,6 +513,7 @@
         <button class="share-btn" id="shareTwBtn">📤 Share analysis</button>
         <button class="share-btn" id="embedBtn">🔗 Get embed badge</button>
         <button class="share-btn" id="watchBtn">⭐ Save to watchlist</button>
+        <button class="share-btn" id="reportIncorrectBtn">🐛 Report incorrect result</button>
         <button class="share-btn" id="exportBtn">📄 Export report</button>
         <button class="share-btn" id="exportCsvBtn">📊 Export CSV <span style="color:var(--blue);">· Pro+</span></button>
         <button class="share-btn" id="exportPdfBtn">📕 Export PDF <span style="color:var(--blue);">· Pro+</span></button>
@@ -695,7 +701,7 @@
 </footer>
 
 <script>
-const CHAIN_NAMES = {1:'Ethereum',56:'BSC',8453:'Base',42161:'Arbitrum'};
+const CHAIN_NAMES = {1:'Ethereum',56:'BSC',8453:'Base',42161:'Arbitrum',137:'Polygon',43114:'Avalanche',10:'Optimism'};
 const DEXSCREENER_CHAIN_MAP = {ethereum:'1', bsc:'56', base:'8453', arbitrum:'42161'};
 
 // ---- Paystack config — update PAYSTACK_PUBLIC_KEY once your account is ready. ----
@@ -924,6 +930,11 @@ document.getElementById('themeToggle').addEventListener('click', ()=>{
 // chain chips
 document.querySelectorAll('.chain-chip').forEach(chip=>{
   chip.addEventListener('click', ()=>{
+    if(chip.classList.contains('pro-chain') && !isPro){
+      showError(`${CHAIN_NAMES[chip.dataset.chain]} is a Pro feature. Upgrade to scan this chain.`);
+      document.getElementById('pricing').scrollIntoView({behavior:'smooth'});
+      return;
+    }
     document.querySelectorAll('.chain-chip').forEach(c=>c.removeAttribute('data-active'));
     chip.setAttribute('data-active','true');
     selectedChain = chip.dataset.chain;
@@ -1034,6 +1045,24 @@ Flags: ${analysis.flags.map(f=>`${f.title}: ${f.desc}`).join('; ')}`;
   }catch(e){
     answerEl.textContent = 'Network error — try again.';
   }
+});
+
+document.getElementById('reportIncorrectBtn').addEventListener('click', async ()=>{
+  if(!lastReport) return;
+  const details = prompt('What looked wrong about this result? (e.g. "score seems too high", "wrong chain", "missing a flag")');
+  if(!details || details.trim().length < 5) return;
+  const { address, chain } = lastReport;
+  const btn = document.getElementById('reportIncorrectBtn');
+  try{
+    const res = await fetch('/api/community', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ type:'bug_report', address, chain, details, guestId: getGuestId() })
+    });
+    if(res.ok){
+      const orig = btn.textContent; btn.textContent = '✓ Thanks, reported';
+      setTimeout(()=>btn.textContent=orig, 2000);
+    }
+  }catch(e){ /* fail quietly, not critical */ }
 });
 
 document.getElementById('watchBtn').addEventListener('click', async ()=>{
@@ -1343,18 +1372,29 @@ async function runScan(){
     isPro = payload.tier === 'pro';
     updateQuota();
 
+    if(payload.chainMismatch){
+      showError(`This address wasn't found on ${CHAIN_NAMES[chain]} — automatically found it on ${payload.detectedChainName} instead. Showing that result.`);
+    } else {
+      clearError();
+    }
+
     let analysis;
     if(scanMode === 'wallet'){
       analysis = computeWalletRisk(payload.security);
       setLoading(true, 'writing plain-english verdict...');
       const verdict = await getAiVerdict(analysis, address, chain, 'wallet');
-      renderResults(analysis, null, verdict, address, chain, {}, true);
+      renderResults(analysis, null, verdict, address, payload.detectedChain || chain, {}, true);
       addRecent(address.slice(0,6), address, chain);
     } else {
-      analysis = computeRisk(payload.security, payload.market);
+      if(payload.marketDataError){
+        analysis = computeRisk(payload.security, payload.market);
+        analysis.confidence = Math.min(analysis.confidence, 60);
+      } else {
+        analysis = computeRisk(payload.security, payload.market);
+      }
       setLoading(true, 'writing plain-english verdict...');
       const verdict = await getAiVerdict(analysis, address, chain, 'token');
-      renderResults(analysis, payload.market, verdict, address, chain, payload.security, false);
+      renderResults(analysis, payload.market, verdict, address, payload.detectedChain || chain, payload.security, false);
       addRecent(payload.security.token_symbol || address.slice(0,6), address, chain);
     }
   }catch(err){
