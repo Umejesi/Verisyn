@@ -23,6 +23,14 @@ export default async function handler(req, res) {
     return;
   }
 
+  // --- public path: the homepage's live alert feed, no login required.
+  // Shows real detected changes with the address truncated, no user info. ---
+  if (req.method === 'GET' && req.query?.public === '1') {
+    const feed = (await kv.get('public:alerts')) || [];
+    res.status(200).json({ feed: feed.slice(0, 20) });
+    return;
+  }
+
   // --- normal user paths: require a logged-in Pro session ---
   const user = await getSessionUser(req);
   if (!user) { res.status(401).json({ error: 'Log in first.' }); return; }
@@ -107,6 +115,17 @@ async function runDailyWatchlistCheck() {
              <p><b>${item.label}</b> (${item.address})</p>
              <ul>${diffs.map(d => `<li>${d}</li>`).join('')}</ul>
              <p><a href="https://verisyn-five.vercel.app/?a=${item.address}&c=${item.chain}">View full report</a></p>`);
+
+          // Push an anonymized version to the public live feed — no user info,
+          // just the fact that something real got caught.
+          const publicFeed = (await kv.get('public:alerts')) || [];
+          publicFeed.unshift({
+            addressShort: `${item.address.slice(0,6)}…${item.address.slice(-4)}`,
+            chain: item.chain,
+            summary: diffs[0],
+            timestamp: Date.now()
+          });
+          await kv.set('public:alerts', publicFeed.slice(0, 50));
         }
       } catch (err) {
         console.error(`Watchlist check failed for ${item.address}:`, err);
