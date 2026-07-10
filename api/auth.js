@@ -7,7 +7,7 @@
 
 import { kv, hashPassword, verifyPassword, generateToken, setSessionCookie,
          clearSessionCookie, getSessionUser, getUserRecord, saveUserRecord,
-         checkRateLimit, getClientIp, sendEmail } from './_lib.js';
+         checkRateLimit, getClientIp, sendEmail, isPasswordBreached, parseCookies } from './_lib.js';
 
 export default async function handler(req, res) {
   if (req.method === 'GET') {
@@ -29,6 +29,23 @@ export default async function handler(req, res) {
   if (action === 'logout') {
     clearSessionCookie(res);
     res.status(200).json({ ok: true });
+    return;
+  }
+
+  if (action === 'logout_other_sessions') {
+    const user = await getSessionUser(req);
+    if (!user) { res.status(401).json({ error: 'Log in first.' }); return; }
+    const currentToken = parseCookies(req)['verisyn_session'];
+    const allTokens = await kv.smembers(`user_sessions:${user.email}`);
+    let revoked = 0;
+    for (const t of allTokens) {
+      if (t !== currentToken) {
+        await kv.del(`session:${t}`);
+        await kv.srem(`user_sessions:${user.email}`, t);
+        revoked++;
+      }
+    }
+    res.status(200).json({ ok: true, revoked });
     return;
   }
 
@@ -98,9 +115,15 @@ export default async function handler(req, res) {
     const existing = await getUserRecord(normalizedEmail);
     if (existing) { res.status(409).json({ error: 'An account with this email already exists — try logging in.' }); return; }
 
+    if (await isPasswordBreached(password)) {
+      res.status(400).json({ error: 'That password has appeared in known data breaches. Please choose a different one.' });
+      return;
+    }
+
     await saveUserRecord(normalizedEmail, { passwordHash: hashPassword(password), isPro: false, createdAt: Date.now() });
     const token = generateToken();
     await kv.set(`session:${token}`, normalizedEmail, { ex: 60 * 60 * 24 * 30 });
+    await kv.sadd(`user_sessions:${normalizedEmail}`, token);
     setSessionCookie(res, token);
     res.status(200).json({ email: normalizedEmail, isPro: false });
     return;
@@ -123,6 +146,7 @@ export default async function handler(req, res) {
 
     const token = generateToken();
     await kv.set(`session:${token}`, normalizedEmail, { ex: 60 * 60 * 24 * 30 });
+    await kv.sadd(`user_sessions:${normalizedEmail}`, token);
     setSessionCookie(res, token);
     res.status(200).json({ email: normalizedEmail, isPro: !!user.isPro });
     return;
