@@ -20,11 +20,32 @@ const GUEST_LIMIT = 3;
 const GUEST_IP_LIMIT = 12; // higher than GUEST_LIMIT to allow for shared/office IPs
 const REGISTERED_LIMIT = 5;
 
+const CORE_CHAINS = ['1', '56', '8453', '42161'];       // free for everyone
+const PRO_CHAINS = ['137', '43114', '10'];              // Polygon, Avalanche, Optimism — Pro only
+const CHAIN_NAMES = { '1':'Ethereum', '56':'BSC', '8453':'Base', '42161':'Arbitrum', '137':'Polygon', '43114':'Avalanche', '10':'Optimism', 'solana':'Solana' };
+const SOLANA_ADDRESS_RE = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+
+async function fetchTokenSecurity(chain, address) {
+  if (chain === 'solana') {
+    // GoPlus's Solana Token Security API is still labeled "Beta" by GoPlus
+    // themselves, and uses a different response schema than the EVM chains.
+    const sRes = await fetch(`https://api.gopluslabs.io/api/v1/solana/token_security?contract_addresses=${address}`);
+    const sData = await sRes.json();
+    const key = Object.keys(sData.result || {})[0];
+    return key ? { ...sData.result[key], _isSolana: true } : null;
+  }
+  const sRes = await fetch(`https://api.gopluslabs.io/api/v1/token_security/${chain}?contract_addresses=${address}`);
+  const sData = await sRes.json();
+  const key = Object.keys(sData.result || {})[0];
+  return key ? sData.result[key] : null;
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
 
   const { address, chain, mode, guestId } = req.body || {};
-  if (!address || !/^0x[a-fA-F0-9]{40}$/.test(address)) { res.status(400).json({ error: 'Invalid address.' }); return; }
+  const isValidAddress = chain === 'solana' ? SOLANA_ADDRESS_RE.test(address || '') : /^0x[a-fA-F0-9]{40}$/.test(address || '');
+  if (!address || !isValidAddress) { res.status(400).json({ error: 'Invalid address.' }); return; }
   if (!chain) { res.status(400).json({ error: 'Missing chain.' }); return; }
 
   const user = await getSessionUser(req);
@@ -42,8 +63,18 @@ export default async function handler(req, res) {
     ipQuotaKey = `quota:guestip:${getClientIp(req)}:${todayKey()}`;
   }
 
+  if (mode === 'wallet' && chain === 'solana') {
+    res.status(400).json({ error: 'Wallet analysis is not yet available for Solana.' });
+    return;
+  }
+
   if (mode === 'wallet' && tier !== 'pro') {
     res.status(403).json({ error: 'Wallet analysis is a Pro feature.', tier });
+    return;
+  }
+
+  if (PRO_CHAINS.includes(chain) && tier !== 'pro') {
+    res.status(403).json({ error: 'This chain is a Pro feature. Upgrade to scan Polygon, Avalanche, or Optimism.', tier });
     return;
   }
 
@@ -62,7 +93,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    let security, market = null;
+    let security, market = null, detectedChain = chain, chainMismatch = false, marketDataError = false;
 
     if (mode === 'wallet') {
       const wRes = await fetch(`https://api.gopluslabs.io/api/v1/address_security/${address}?chain_id=${chain}`);
@@ -70,16 +101,35 @@ export default async function handler(req, res) {
       if (!wData.result) { res.status(404).json({ error: 'No wallet data found.' }); return; }
       security = wData.result;
     } else {
-      const sRes = await fetch(`https://api.gopluslabs.io/api/v1/token_security/${chain}?contract_addresses=${address}`);
-      const sData = await sRes.json();
-      const key = Object.keys(sData.result || {})[0];
-      if (!key) { res.status(404).json({ error: 'No security data found for this address.' }); return; }
-      security = sData.result[key];
+      security = await fetchTokenSecurity(chain, address);
 
-      const mRes = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${address}`);
-      const mData = await mRes.json();
-      if (mData.pairs && mData.pairs.length > 0) {
-        market = mData.pairs.sort((a, b) => (b.liquidity?.usd || 0) - (a.liquidity?.usd || 0))[0];
+      // Not found on the requested chain — auto-check the other chains this
+      // account is allowed to use, in case the address just exists on a
+      // different one. Prevents confidently scoring the wrong token entirely.
+      // Skipped for Solana since its address format never matches EVM chains anyway.
+      if (!security && chain !== 'solana') {
+        const chainsToTry = [
+          ...CORE_CHAINS.filter(c => c !== chain),
+          ...(tier === 'pro' ? PRO_CHAINS.filter(c => c !== chain) : [])
+        ];
+        for (const tryChain of chainsToTry) {
+          const found = await fetchTokenSecurity(tryChain, address);
+          if (found) { security = found; detectedChain = tryChain; chainMismatch = true; break; }
+        }
+      }
+
+      if (!security) { res.status(404).json({ error: 'No security data found for this address on any supported chain.' }); return; }
+
+      try {
+        const mRes = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${address}`);
+        if (!mRes.ok) throw new Error('DexScreener returned an error status');
+        const mData = await mRes.json();
+        if (mData.pairs && mData.pairs.length > 0) {
+          market = mData.pairs.sort((a, b) => (b.liquidity?.usd || 0) - (a.liquidity?.usd || 0))[0];
+        }
+      } catch (err) {
+        console.error('DexScreener fetch failed:', err);
+        marketDataError = true;
       }
     }
 
@@ -94,7 +144,12 @@ export default async function handler(req, res) {
       if (newIpCount === 1) await kv.expire(ipQuotaKey, 60 * 60 * 24);
     }
 
-    res.status(200).json({ security, market, tier, remaining });
+    res.status(200).json({
+      security, market, tier, remaining,
+      detectedChain, chainMismatch,
+      detectedChainName: chainMismatch ? CHAIN_NAMES[detectedChain] : null,
+      marketDataError
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Scan failed. Try again shortly.' });
