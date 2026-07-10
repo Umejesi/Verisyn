@@ -22,9 +22,18 @@ const REGISTERED_LIMIT = 5;
 
 const CORE_CHAINS = ['1', '56', '8453', '42161'];       // free for everyone
 const PRO_CHAINS = ['137', '43114', '10'];              // Polygon, Avalanche, Optimism — Pro only
-const CHAIN_NAMES = { '1':'Ethereum', '56':'BSC', '8453':'Base', '42161':'Arbitrum', '137':'Polygon', '43114':'Avalanche', '10':'Optimism' };
+const CHAIN_NAMES = { '1':'Ethereum', '56':'BSC', '8453':'Base', '42161':'Arbitrum', '137':'Polygon', '43114':'Avalanche', '10':'Optimism', 'solana':'Solana' };
+const SOLANA_ADDRESS_RE = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 
 async function fetchTokenSecurity(chain, address) {
+  if (chain === 'solana') {
+    // GoPlus's Solana Token Security API is still labeled "Beta" by GoPlus
+    // themselves, and uses a different response schema than the EVM chains.
+    const sRes = await fetch(`https://api.gopluslabs.io/api/v1/solana/token_security?contract_addresses=${address}`);
+    const sData = await sRes.json();
+    const key = Object.keys(sData.result || {})[0];
+    return key ? { ...sData.result[key], _isSolana: true } : null;
+  }
   const sRes = await fetch(`https://api.gopluslabs.io/api/v1/token_security/${chain}?contract_addresses=${address}`);
   const sData = await sRes.json();
   const key = Object.keys(sData.result || {})[0];
@@ -35,7 +44,8 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
 
   const { address, chain, mode, guestId } = req.body || {};
-  if (!address || !/^0x[a-fA-F0-9]{40}$/.test(address)) { res.status(400).json({ error: 'Invalid address.' }); return; }
+  const isValidAddress = chain === 'solana' ? SOLANA_ADDRESS_RE.test(address || '') : /^0x[a-fA-F0-9]{40}$/.test(address || '');
+  if (!address || !isValidAddress) { res.status(400).json({ error: 'Invalid address.' }); return; }
   if (!chain) { res.status(400).json({ error: 'Missing chain.' }); return; }
 
   const user = await getSessionUser(req);
@@ -51,6 +61,11 @@ export default async function handler(req, res) {
     tier = 'guest'; limit = GUEST_LIMIT;
     quotaKey = `quota:guest:${guestId}:${todayKey()}`;
     ipQuotaKey = `quota:guestip:${getClientIp(req)}:${todayKey()}`;
+  }
+
+  if (mode === 'wallet' && chain === 'solana') {
+    res.status(400).json({ error: 'Wallet analysis is not yet available for Solana.' });
+    return;
   }
 
   if (mode === 'wallet' && tier !== 'pro') {
@@ -91,7 +106,8 @@ export default async function handler(req, res) {
       // Not found on the requested chain — auto-check the other chains this
       // account is allowed to use, in case the address just exists on a
       // different one. Prevents confidently scoring the wrong token entirely.
-      if (!security) {
+      // Skipped for Solana since its address format never matches EVM chains anyway.
+      if (!security && chain !== 'solana') {
         const chainsToTry = [
           ...CORE_CHAINS.filter(c => c !== chain),
           ...(tier === 'pro' ? PRO_CHAINS.filter(c => c !== chain) : [])

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Security — Verisyn</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%232451FF'/%3E%3Crect x='22' y='47' width='56' height='6' rx='3' fill='white'/%3E%3C/svg%3E">
+<style>
+  :root{
+    --canvas:#0B0E13; --surface:#12161D; --ink:#EDEFF2; --ink-soft:#9BA3AE;
+    --ink-faint:#5E6670; --line:#232933; --blue:#4C7CFF; --safe:#22C57D;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;background:var(--canvas);color:var(--ink);font-family:'Inter',sans-serif;line-height:1.6;}
+  h1,h2{font-family:'Space Grotesk',sans-serif;}
+  a{color:var(--blue);}
+  .container{max-width:680px;margin:0 auto;padding:0 20px;}
+  header{border-bottom:1px solid var(--line);background:var(--surface);}
+  .headbar{display:flex;align-items:center;gap:9px;padding:14px 0;text-decoration:none;color:var(--ink);font-weight:700;font-size:18px;}
+  .logo-mark{width:22px;height:22px;border-radius:6px;background:var(--blue);position:relative;flex-shrink:0;}
+  .logo-mark::after{content:'';position:absolute;left:4px;right:4px;height:2px;background:#fff;top:50%;transform:translateY(-50%);border-radius:2px;}
+  .hero{padding:40px 0 10px;}
+  h1{font-size:28px;margin:0 0 6px;}
+  p, li{color:var(--ink-soft);font-size:14.5px;}
+  h2{font-size:18px;margin:32px 0 10px;}
+  ul{padding-left:20px;}
+  .list-card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;margin:16px 0;}
+  .badge{display:inline-block;background:rgba(34,197,125,0.12);color:var(--safe);padding:4px 12px;border-radius:20px;font-size:12.5px;font-weight:600;margin-bottom:16px;}
+  .contact-box{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;margin-top:30px;}
+  footer{text-align:center;color:var(--ink-faint);font-size:12px;padding:40px 0 60px;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <a class="headbar" href="/"><div class="logo-mark"></div>Verisyn</a>
+  </div>
+</header>
+
+<div class="container hero">
+  <h1>Security</h1>
+  <span class="badge">✓ No known open vulnerabilities</span>
+
+  <p>Verisyn handles real accounts and real payments, so we take security seriously. Here's what's actually in place, and how to report a problem if you find one.</p>
+
+  <h2>What we do</h2>
+  <div class="list-card">
+    <ul>
+      <li>Passwords are salted and hashed (scrypt) — we never store or see your actual password</li>
+      <li>New passwords are checked against known breach databases at signup</li>
+      <li>Session cookies are HttpOnly, Secure, and SameSite-protected</li>
+      <li>Login and account-creation attempts are rate limited to prevent brute-forcing</li>
+      <li>All payments are processed by Paystack — we never see or store your card details</li>
+      <li>Every paid feature is enforced server-side, not just hidden in the interface</li>
+      <li>Payment webhooks are cryptographically signature-verified</li>
+      <li>Standard security headers and a Content-Security-Policy are set on every page</li>
+    </ul>
+  </div>
+
+  <h2>What we don't claim</h2>
+  <p>We're a small, independently-built product. We have not undergone formal penetration testing, and we don't hold SOC2 or similar enterprise certifications. We'd rather tell you that plainly than imply a level of assurance we haven't earned yet.</p>
+
+  <h2>Found a vulnerability?</h2>
+  <p>If you find a genuine security issue, please report it privately rather than posting it publicly — we'll fix real issues quickly and acknowledge your help.</p>
+  <div class="contact-box">
+    <b>Report a vulnerability</b><br>
+    Email us with details and steps to reproduce. We can't currently offer a paid bounty, but we'll credit you publicly (with your permission) once it's fixed.
+  </div>
+</div>
+
+<footer>
+  <a href="/">← Back to Verisyn</a> · <a href="/privacy.html">Privacy Policy</a>
+</footer>
+</body>
+</html>
