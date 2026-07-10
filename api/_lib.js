@@ -47,6 +47,23 @@ export function generateToken() {
   return crypto.randomBytes(24).toString('hex');
 }
 
+// Checks a password against HaveIBeenPwned's breach database using their
+// k-anonymity API — only the first 5 chars of the SHA-1 hash are sent, so
+// the actual password is never transmitted anywhere. Free, no API key.
+export async function isPasswordBreached(password) {
+  try {
+    const hash = crypto.createHash('sha1').update(password).digest('hex').toUpperCase();
+    const prefix = hash.slice(0, 5);
+    const suffix = hash.slice(5);
+    const res = await fetch(`https://api.pwnedpasswords.com/range/${prefix}`);
+    if (!res.ok) return false; // fail open — don't block signup if the check service is down
+    const text = await res.text();
+    return text.split('\n').some(line => line.startsWith(suffix));
+  } catch {
+    return false; // fail open
+  }
+}
+
 function parseUser(raw) {
   if (!raw) return null;
   return typeof raw === 'string' ? JSON.parse(raw) : raw;
