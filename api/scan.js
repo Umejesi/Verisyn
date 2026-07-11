@@ -14,11 +14,9 @@
 // Registered (logged in, not Pro): 5 scans/day, tracked against their account.
 // Pro: unlimited, and the only tier allowed to use wallet analysis.
 
-import { kv, getSessionUser, todayKey, getClientIp } from './_lib.js';
+import { kv, getSessionUser, todayKey, getClientIp, GUEST_LIMIT, REGISTERED_LIMIT } from './_lib.js';
 
-const GUEST_LIMIT = 3;
 const GUEST_IP_LIMIT = 12; // higher than GUEST_LIMIT to allow for shared/office IPs
-const REGISTERED_LIMIT = 5;
 
 const CORE_CHAINS = ['1', '56', '8453', '42161'];       // free for everyone
 const PRO_CHAINS = ['137', '43114', '10'];              // Polygon, Avalanche, Optimism — Pro only
