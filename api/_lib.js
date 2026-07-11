@@ -134,6 +134,10 @@ export function todayKey() {
   return new Date().toISOString().slice(0, 10); // YYYY-MM-DD, used so quotas reset daily
 }
 
+// Shared between scan.js and auth.js so both always agree on the real limits.
+export const GUEST_LIMIT = 3;
+export const REGISTERED_LIMIT = 5;
+
 // Returns the real client IP behind Vercel's proxy. Used for rate limiting.
 export function getClientIp(req) {
   const forwarded = req.headers['x-forwarded-for'];
