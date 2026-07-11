@@ -7,16 +7,33 @@
 
 import { kv, hashPassword, verifyPassword, generateToken, setSessionCookie,
          clearSessionCookie, getSessionUser, getUserRecord, saveUserRecord,
-         checkRateLimit, getClientIp, sendEmail, isPasswordBreached, parseCookies } from './_lib.js';
+         checkRateLimit, getClientIp, sendEmail, isPasswordBreached, parseCookies,
+         todayKey, GUEST_LIMIT, REGISTERED_LIMIT } from './_lib.js';
 
 export default async function handler(req, res) {
   if (req.method === 'GET') {
     const user = await getSessionUser(req);
-    if (!user) { res.status(200).json({ loggedIn: false }); return; }
+    if (!user) {
+      // Not logged in — return real guest quota remaining if a guestId was passed.
+      const guestId = req.query?.guestId;
+      let remaining = null;
+      if (guestId) {
+        const used = Number(await kv.get(`quota:guest:${guestId}:${todayKey()}`) || 0);
+        remaining = Math.max(0, GUEST_LIMIT - used);
+      }
+      res.status(200).json({ loggedIn: false, remaining });
+      return;
+    }
     const record = await getUserRecord(user.email);
+    let remaining = null;
+    if (!user.isPro) {
+      const used = Number(await kv.get(`quota:user:${user.email}:${todayKey()}`) || 0);
+      remaining = Math.max(0, REGISTERED_LIMIT - used);
+    }
     res.status(200).json({
       loggedIn: true, email: user.email, isPro: user.isPro, isProPlus: user.isProPlus,
-      plan: record?.plan || null, subscriptionCode: record?.subscriptionCode || null
+      plan: record?.plan || null, subscriptionCode: record?.subscriptionCode || null,
+      remaining
     });
     return;
   }
