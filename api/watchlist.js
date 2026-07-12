@@ -32,9 +32,18 @@ export default async function handler(req, res) {
     return;
   }
 
-  // --- normal user paths: require a logged-in Pro session ---
+  // --- normal user paths: require a logged-in session ---
   const user = await getSessionUser(req);
   if (!user) { res.status(401).json({ error: 'Log in first.' }); return; }
+
+  // Scan history is available to any logged-in user (not Pro-gated) — it's
+  // what powers the dashboard's "recent scans" widget for everyone with an account.
+  if (req.method === 'GET' && req.query?.history === '1') {
+    const history = (await kv.get(`scan_history:${user.email}`)) || [];
+    res.status(200).json({ history });
+    return;
+  }
+
   if (!user.isPro) { res.status(403).json({ error: 'Server-side watchlists with alerts are a Pro feature.' }); return; }
 
   const key = `watchlist:${user.email}`;
