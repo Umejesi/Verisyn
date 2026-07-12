@@ -27,7 +27,8 @@ export default async function handler(req, res) {
   // Shows real detected changes with the address truncated, no user info. ---
   if (req.method === 'GET' && req.query?.public === '1') {
     const feed = (await kv.get('public:alerts')) || [];
-    res.status(200).json({ feed: feed.slice(0, 20) });
+    const totalScans = Number(await kv.get('verisyn:total_scans') || 0);
+    res.status(200).json({ feed: feed.slice(0, 20), totalScans });
     return;
   }
 
