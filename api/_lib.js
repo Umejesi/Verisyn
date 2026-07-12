@@ -20,8 +20,8 @@ export function parseCookies(req) {
   return cookies;
 }
 
-export function setSessionCookie(res, token) {
-  const maxAge = 60 * 60 * 24 * 30; // 30 days
+export function setSessionCookie(res, token, maxAgeSeconds) {
+  const maxAge = maxAgeSeconds || (60 * 60 * 24 * 30); // default 30 days
   res.setHeader('Set-Cookie', `verisyn_session=${token}; Path=/; Max-Age=${maxAge}; HttpOnly; Secure; SameSite=Lax`);
 }
 
