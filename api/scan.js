@@ -141,6 +141,7 @@ export default async function handler(req, res) {
       const newIpCount = await kv.incr(ipQuotaKey);
       if (newIpCount === 1) await kv.expire(ipQuotaKey, 60 * 60 * 24);
     }
+    try { await kv.incr('verisyn:total_scans'); } catch {} // real counter for the trust indicator on the login page
 
     res.status(200).json({
       security, market, tier, remaining,
