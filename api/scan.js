@@ -143,6 +143,18 @@ export default async function handler(req, res) {
     }
     try { await kv.incr('verisyn:total_scans'); } catch {} // real counter for the trust indicator on the login page
 
+    // Log real scan history for logged-in users — this is what powers the
+    // dashboard's "recent scans" and "security score" widgets with actual
+    // data instead of placeholders. Guests aren't tracked (no account to attach to).
+    if (user && mode !== 'wallet') {
+      try {
+        const historyKey = `scan_history:${user.email}`;
+        const history = (await kv.get(historyKey)) || [];
+        history.unshift({ address, chain: detectedChain, timestamp: Date.now() }); // score computed client-side, not duplicated here
+        await kv.set(historyKey, history.slice(0, 20));
+      } catch (err) { console.error('Failed to log scan history:', err); }
+    }
+
     res.status(200).json({
       security, market, tier, remaining,
       detectedChain, chainMismatch,
