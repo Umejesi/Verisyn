@@ -40,7 +40,7 @@ export default async function handler(req, res) {
 
   if (req.method !== 'POST') { res.status(405).end(); return; }
 
-  const { action, email, password } = req.body || {};
+  const { action, email, password, remember } = req.body || {};
   const ip = getClientIp(req);
 
   if (action === 'logout') {
@@ -162,9 +162,10 @@ export default async function handler(req, res) {
     if (!verifyPassword(password, user.passwordHash)) { res.status(401).json({ error: 'Incorrect password.' }); return; }
 
     const token = generateToken();
-    await kv.set(`session:${token}`, normalizedEmail, { ex: 60 * 60 * 24 * 30 });
+    const sessionSeconds = remember === false ? (60 * 60 * 12) : (60 * 60 * 24 * 30); // 12h if not remembered, else 30 days
+    await kv.set(`session:${token}`, normalizedEmail, { ex: sessionSeconds });
     await kv.sadd(`user_sessions:${normalizedEmail}`, token);
-    setSessionCookie(res, token);
+    setSessionCookie(res, token, sessionSeconds);
     res.status(200).json({ email: normalizedEmail, isPro: !!user.isPro });
     return;
   }
