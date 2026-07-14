@@ -31,7 +31,7 @@ export default async function handler(req, res) {
     await kv.set(`session:${sessionToken}`, email, { ex: 60 * 60 * 24 * 30 });
     setSessionCookie(res, sessionToken);
 
-    res.redirect(302, `${siteUrl}/?authed=1`);
+    res.redirect(302, `${siteUrl}/dashboard.html?authed=1`);
     return;
   }
 
