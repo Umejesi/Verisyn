@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Help Center — Verisyn</title>
+<meta name="description" content="How to use Verisyn: scanning, wallet checks, subscriptions, cancellations, the extension, and more.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%232451FF'/%3E%3Crect x='22' y='47' width='56' height='6' rx='3' fill='white'/%3E%3C/svg%3E">
+<style>
+  :root{ --canvas:#0B0E13; --surface:#12161D; --surface-2:#181D26; --ink:#EDEFF2; --ink-soft:#9BA3AE; --ink-faint:#5E6670; --line:#232933; --blue:#4C7CFF; }
+  *{box-sizing:border-box;}
+  html,body{margin:0;background:var(--canvas);color:var(--ink);font-family:'Inter',sans-serif;line-height:1.6;}
+  h1,h2{font-family:'Space Grotesk',sans-serif;}
+  a{color:var(--blue);}
+  .container{max-width:720px;margin:0 auto;padding:0 20px;}
+  header{border-bottom:1px solid var(--line);background:var(--surface);}
+  .headbar{display:flex;align-items:center;justify-content:space-between;padding:14px 0;}
+  .logo{display:flex;align-items:center;gap:9px;font-weight:700;font-size:18px;text-decoration:none;color:var(--ink);}
+  .logo-mark{width:22px;height:22px;border-radius:6px;background:var(--blue);position:relative;flex-shrink:0;}
+  .logo-mark::after{content:'';position:absolute;left:4px;right:4px;height:2px;background:#fff;top:50%;transform:translateY(-50%);border-radius:2px;}
+  .nav-link{font-size:13.5px;color:var(--ink-soft);text-decoration:none;margin-left:18px;}
+
+  .hero{padding:44px 0 10px;text-align:center;}
+  h1{font-size:30px;margin:0 0 10px;}
+  .hero p{color:var(--ink-soft);font-size:14.5px;}
+  .search-box{max-width:420px;margin:20px auto 0;}
+  .search-box input{width:100%;padding:12px 16px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);font-size:14px;}
+
+  .cat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:30px 0;}
+  @media (max-width:600px){ .cat-grid{grid-template-columns:1fr 1fr;} }
+  .cat-card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;text-align:center;cursor:pointer;font-size:13px;font-weight:600;}
+  .cat-card:hover{border-color:var(--blue);color:var(--blue);}
+
+  .faq-item{background:var(--surface);border:1px solid var(--line);border-radius:12px;margin-bottom:10px;overflow:hidden;}
+  .faq-q{padding:16px 18px;font-weight:600;font-size:14.5px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;}
+  .faq-a{padding:0 18px 16px;font-size:13.5px;color:var(--ink-soft);display:none;}
+  .faq-item.open .faq-a{display:block;}
+  .faq-item.open .faq-q .arrow{transform:rotate(180deg);}
+  .arrow{transition:transform 0.2s ease;color:var(--ink-faint);}
+
+  .section-label{font-size:12px;font-weight:700;color:var(--ink-faint);text-transform:uppercase;letter-spacing:1px;margin:34px 0 12px;}
+  footer{text-align:center;color:var(--ink-faint);font-size:12px;padding:40px 0 60px;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container headbar">
+    <a class="logo" href="/"><div class="logo-mark"></div>Verisyn</a>
+    <div>
+      <a class="nav-link" href="/">Scanner</a>
+      <a class="nav-link" href="/pricing.html">Pricing</a>
+    </div>
+  </div>
+</header>
+
+<div class="container hero">
+  <h1>How can we help?</h1>
+  <p>Answers to common questions, or ask our AI assistant using the chat button in the corner.</p>
+  <div class="search-box"><input type="text" id="faqSearch" placeholder="Search help articles..."></div>
+</div>
+
+<div class="container">
+  <div class="section-label">Getting Started</div>
+  <div class="faq-item" data-cat="start">
+    <div class="faq-q">How do I scan a token? <span class="arrow">▾</span></div>
+    <div class="faq-a">Paste a contract address (or search by token name) into the box on the homepage, pick the chain if it's not auto-detected, and hit Scan. You'll get a risk score, plain-English flags, and market data in a few seconds — no wallet connection needed.</div>
+  </div>
+  <div class="faq-item" data-cat="start">
+    <div class="faq-q">Why is my risk score low even though the token looks fine? <span class="arrow">▾</span></div>
+    <div class="faq-a">The score reflects real on-chain signals: mint/ownership permissions, tax, liquidity lock, and holder concentration. A low score means at least one of those genuinely triggered — expand "Why this matters" on each flag to see exactly why it counts against the score. It's not a guess; it's specific.</div>
+  </div>
+  <div class="faq-item" data-cat="start">
+    <div class="faq-q">Do I need to connect my wallet? <span class="arrow">▾</span></div>
+    <div class="faq-a">No — never. Verisyn only reads public blockchain data. You never connect a wallet or sign anything to use any part of the product.</div>
+  </div>
+
+  <div class="section-label">Subscriptions &amp; Billing</div>
+  <div class="faq-item" data-cat="billing">
+    <div class="faq-q">How do subscriptions work? <span class="arrow">▾</span></div>
+    <div class="faq-a">Pro and Pro+ are real recurring subscriptions billed monthly through Paystack (in NGN, shown in USD for clarity). Payment activates your account automatically — no manual steps.</div>
+  </div>
+  <div class="faq-item" data-cat="billing">
+    <div class="faq-q">Can I cancel anytime? <span class="arrow">▾</span></div>
+    <div class="faq-a">Yes. Go to your Account page and click Cancel Subscription. Your access continues until the end of the billing period you already paid for — no immediate cutoff, no penalty.</div>
+  </div>
+  <div class="faq-item" data-cat="billing">
+    <div class="faq-q">What's the difference between Pro and Pro+? <span class="arrow">▾</span></div>
+    <div class="faq-a">Pro covers unlimited scans, wallet reputation checks, and unlimited watchlists with real email alerts. Pro+ adds AI Q&A on scans, deployer reputation history, rug timelines, early-buyer detection, and PDF/CSV export.</div>
+  </div>
+
+  <div class="section-label">Account &amp; Security</div>
+  <div class="faq-item" data-cat="account">
+    <div class="faq-q">How do I verify my account? <span class="arrow">▾</span></div>
+    <div class="faq-a">There's no separate identity verification step — signing in (via Google, a magic email link, or email+password) is all you need.</div>
+  </div>
+  <div class="faq-item" data-cat="account">
+    <div class="faq-q">I forgot my password — now what? <span class="arrow">▾</span></div>
+    <div class="faq-a">Use "Continue with Email Link" on the sign-in page instead of a password — it logs you straight in via a secure emailed link, no reset flow needed.</div>
+  </div>
+
+  <div class="section-label">Features</div>
+  <div class="faq-item" data-cat="features">
+    <div class="faq-q">What is whale analysis? <span class="arrow">▾</span></div>
+    <div class="faq-a">It shows exactly who holds a token — the top 10 wallets, what % they control, and (Pro+) the deployer's track record across every other token they've made, plus who bought earliest.</div>
+  </div>
+  <div class="faq-item" data-cat="features">
+    <div class="faq-q">What's a honeypot? <span class="arrow">▾</span></div>
+    <div class="faq-a">A contract designed to let you buy but block you from ever selling — one of the most common total-loss scams. Verisyn checks for this on every scan automatically.</div>
+  </div>
+  <div class="faq-item" data-cat="features">
+    <div class="faq-q">How do I install the Chrome extension? <span class="arrow">▾</span></div>
+    <div class="faq-a">It's not on the Chrome Web Store yet. For now: download the extension zip, unzip it, go to chrome://extensions, turn on Developer Mode, and click "Load unpacked" to select the folder.</div>
+  </div>
+  <div class="faq-item" data-cat="features">
+    <div class="faq-q">How does the Telegram bot work? <span class="arrow">▾</span></div>
+    <div class="faq-a">Message @Verisyn_bot and type /scan followed by a contract address in any chat. Group admins can also turn on auto-scan so it checks every address posted automatically.</div>
+  </div>
+</div>
+
+<footer>
+  Still stuck? Use the chat button in the corner to ask our AI assistant, or reach a real person via Live Support.
+</footer>
+
+<script>
+document.querySelectorAll('.faq-q').forEach(q=>{
+  q.addEventListener('click', ()=> q.parentElement.classList.toggle('open'));
+});
+document.getElementById('faqSearch').addEventListener('input', (e)=>{
+  const val = e.target.value.toLowerCase();
+  document.querySelectorAll('.faq-item').forEach(item=>{
+    const text = item.textContent.toLowerCase();
+    item.style.display = text.includes(val) ? 'block' : 'none';
+  });
+});
+</script>
+</body>
+</html>
